@@ -35,8 +35,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void addControl() {
 
-
-
         tab_layout = findViewById(R.id.tab_layout);
         view_pager = findViewById(R.id.view_pager);
 
@@ -45,16 +43,12 @@ public class MainActivity extends AppCompatActivity {
 
         new TabLayoutMediator(tab_layout, view_pager, (tab, position) -> {
             switch (position) {
-                case 0: tab.setText("Trang chủ"); break;
-                case 1: tab.setText("Trang thu"); break;
-                case 2: tab.setText("Trang chi"); break;
-                case 3: tab.setText("Trang biểu đồ"); break;
+                case 0: tab.setText("Home"); break;
+                case 1: tab.setText("Income"); break;
+                case 2: tab.setText("Expense"); break;
+                case 3: tab.setText("Note"); break;
             }
         }).attach();
-
-
-
-
 
     }
 }

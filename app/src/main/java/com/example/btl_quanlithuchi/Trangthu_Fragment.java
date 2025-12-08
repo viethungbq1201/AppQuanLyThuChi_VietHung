@@ -12,6 +12,7 @@ import android.graphics.Color;
 import android.icu.text.SimpleDateFormat;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -31,7 +32,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.text.NumberFormat;
+import java.text.DecimalFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -45,6 +46,7 @@ public class Trangthu_Fragment extends Fragment {
     private Spinner spinnerMonth;
     private String currentMonthYear;
     private TextView tvTotal;
+    private static final String TAG = "Trangthu_Fragment";
 
     @Nullable
     @Override
@@ -61,6 +63,9 @@ public class Trangthu_Fragment extends Fragment {
         }
 
         dbHelper = new DBHelper(getContext());
+
+        // DEBUG: Kiểm tra dữ liệu
+        dbHelper.debugAllData();
 
         // Lấy tháng hiện tại
         currentMonthYear = new SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(new Date());
@@ -128,8 +133,8 @@ public class Trangthu_Fragment extends Fragment {
         // Hiển thị tổng thu của tháng
         if (tvTotal != null) {
             int total = dbHelper.getTotalIncomeByMonth(monthYear);
-            NumberFormat formatter = NumberFormat.getInstance(Locale.US);
-            tvTotal.setText("Tổng thu tháng " + monthYear + ": " + formatter.format(total) + " Đ");
+            DecimalFormat formatter = new DecimalFormat("#,###");
+            tvTotal.setText("Tổng thu tháng " + monthYear + ": " + formatter.format(total) + " đ");
             tvTotal.setTextColor(Color.parseColor("#4CAF50"));
         }
     }
@@ -172,6 +177,7 @@ public class Trangthu_Fragment extends Fragment {
         final String[] selectedDateTime = { currentDateTime };
 
         EditText editCategory = view.findViewById(R.id.edit_category);
+        EditText editPrice = view.findViewById(R.id.edit_price);
         editCategory.requestFocus();
 
         final boolean[] isSpinnerInitialized = {false};
@@ -188,7 +194,7 @@ public class Trangthu_Fragment extends Fragment {
 
                 if (position > 0) {
                     editCategory.setText(options[position]);
-                    editPrice.setText((defaultPrices[position]));
+                    editPrice.setText(defaultPrices[position]);
                 } else {
                     editCategory.setText("");
                     editPrice.setText("");
@@ -219,50 +225,54 @@ public class Trangthu_Fragment extends Fragment {
             DBHelper dbHelper = new DBHelper(getContext());
             Infomation inf = new Infomation();
 
-            String category = ((EditText)view.findViewById(R.id.edit_category)).getText().toString();
-            String priceInput = ((EditText)view.findViewById(R.id.edit_price)).getText().toString();
-
-            if (priceInput.endsWith("k")) {
-                priceInput = priceInput.replace("k", "");
-                priceInput = String.valueOf(Integer.parseInt(priceInput) * 1000);
-            } else if (priceInput.endsWith("tr")) {
-                priceInput = priceInput.replace("tr", "");
-                priceInput = String.valueOf(Integer.parseInt(priceInput) * 1000000);
-            }
-            String price = priceInput;
+            String category = editCategory.getText().toString();
+            String priceInput = editPrice.getText().toString();
 
             if (isEmpty(category)) {
                 Toast.makeText(getContext(), "Vui lòng nhập danh mục!", Toast.LENGTH_SHORT).show();
-            } else if (isEmpty(price)) {
-                Toast.makeText(getContext(), "Vui lòng nhập giá tiền!", Toast.LENGTH_SHORT).show();
-            } else {
-
-                inf.setTitle("");
-                inf.setCategory(category);
-                inf.setPrice(Integer.parseInt(price));
-                inf.setType("thu");
-                inf.setDate(selectedDateTime[0]);
-                dbHelper.insertInfomation(inf);
-
-                List<Infomation> list = dbHelper.getInfomationsByType("thu");
-                this.adapter.setData(list);
-
-                // Cập nhật spinner tháng
-                String selectedMonth = (String) spinnerMonth.getSelectedItem();
-                if (selectedMonth != null) {
-                    loadDataForMonth(selectedMonth);
-                }
-
-                dialog.dismiss();
+                return;
             }
 
+            if (isEmpty(priceInput)) {
+                Toast.makeText(getContext(), "Vui lòng nhập giá tiền!", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Sử dụng phương thức parse từ DBHelper
+            int price = dbHelper.parsePriceFromString(priceInput);
+
+            if (price <= 0) {
+                Toast.makeText(getContext(), "Số tiền không hợp lệ! Vui lòng nhập số (vd: 10000, 10k, 0.5tr)", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            Log.d(TAG, "Adding new entry - Category: " + category + ", Price: " + price + ", PriceInput: " + priceInput);
+
+            inf.setTitle("");
+            inf.setCategory(category);
+            inf.setPrice(price);
+            inf.setType("thu");
+            inf.setDate(selectedDateTime[0]);
+            inf.setTimestamp(dbHelper.convertDateToTimestamp(selectedDateTime[0]));
+
+            dbHelper.insertInfomation(inf);
+
+            // Cập nhật dữ liệu
+            String selectedMonth = (String) spinnerMonth.getSelectedItem();
+            if (selectedMonth != null) {
+                loadDataForMonth(selectedMonth);
+            }
+
+            dialog.dismiss();
+            Toast.makeText(getContext(), "Đã thêm thành công: " + category + " - " + price + " đ", Toast.LENGTH_SHORT).show();
+
+            // Kiểm tra số dư âm
             int income = dbHelper.getTotalIncome();
             int expense = dbHelper.getTotalExpense();
             int balance = income - expense;
             if (balance < 0) {
                 sendNotification("⚠️ Số dư đã âm! Bạn nghèo rồi.");
             }
-
         });
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());

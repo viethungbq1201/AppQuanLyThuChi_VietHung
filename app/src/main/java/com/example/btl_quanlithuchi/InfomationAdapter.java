@@ -2,6 +2,7 @@ package com.example.btl_quanlithuchi;
 
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.Color;
@@ -19,6 +20,7 @@ import android.widget.Toast;
 
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -101,18 +103,34 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         Infomation t = list.get(position);
-        NumberFormat formatter = NumberFormat.getInstance(Locale.US);
+
+        // DEBUG: Kiểm tra giá trị
+        if (t.getPrice() == 0) {
+            // Nếu giá trị là 0, có thể do lỗi parse
+            System.out.println("DEBUG: Item at position " + position + " has price = 0");
+        }
+
+        // Sử dụng DecimalFormat thay vì NumberFormat
+        DecimalFormat formatter = new DecimalFormat("#,###");
         String formattedPrice = formatter.format(t.getPrice());
 
         int imageRes = getImageForTitle(t.getCategory());
         holder.anh.setImageResource(imageRes);
         holder.category.setText(t.getCategory());
-        holder.date.setText(t.getDate());
+
+        // Hiển thị ngày tháng
+        String displayDate = t.getDate();
+        if (displayDate.length() > 10) {
+            displayDate = displayDate.substring(0, 10); // Chỉ lấy dd/MM/yyyy
+        }
+        holder.date.setText(displayDate);
+
+        // Hiển thị số tiền
         if (t.getType().equalsIgnoreCase("thu")) {
-            holder.price.setText("+ " + formattedPrice + " Đ");
+            holder.price.setText("+ " + formattedPrice + " đ");
             holder.price.setTextColor(Color.parseColor("#4CAF50"));
         } else {
-            holder.price.setText("- " + formattedPrice + " Đ");
+            holder.price.setText("- " + formattedPrice + " đ");
             holder.price.setTextColor(Color.parseColor("#F44336"));
         }
 
@@ -140,24 +158,15 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
     }
 
     public void setData(List<Infomation> newList) {
-        newList.sort((a, b) -> {
-            try {
-                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
-                Date dateA = sdf.parse(a.getDate());
-                Date dateB = sdf.parse(b.getDate());
-                return dateB.compareTo(dateA);
-            } catch (Exception e) {
-                return 0;
-            }
-        });
-
+        // Sắp xếp theo timestamp (mới nhất trước)
+        newList.sort((a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
         this.list = newList;
         notifyDataSetChanged();
     }
 
     private void showEditDialog(Infomation info, int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        View view = LayoutInflater.from(context).inflate(R.layout.dialog_edit, null); // Tạo dialog_edit mới
+        View view = LayoutInflater.from(context).inflate(R.layout.dialog_edit, null);
         builder.setView(view);
         AlertDialog dialog = builder.create();
         dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
@@ -183,9 +192,13 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinner.setAdapter(adapter);
 
-        // Set dữ liệu cũ
+        // Set dữ liệu cũ - HIỂN THỊ SỐ TIỀN ĐẦY ĐỦ
         edtCategory.setText(info.getCategory());
-        edtPrice.setText(String.valueOf(info.getPrice()));
+
+        // Hiển thị số tiền dạng có dấu phẩy
+        DecimalFormat priceFormat = new DecimalFormat("#,###");
+        edtPrice.setText(priceFormat.format(info.getPrice()));
+
         spinner.setSelection(getSpinnerPosition(info.getCategory(), options));
 
         // Set ngày hiện tại của giao dịch
@@ -194,32 +207,38 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
 
         // Parse ngày từ chuỗi
         final String[] selectedDateTime = { currentDateTime };
-        Calendar calendar = Calendar.getInstance();
+        final Calendar calendar = Calendar.getInstance();
+
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
             Date date = sdf.parse(currentDateTime);
-            calendar.setTime(date);
+            if (date != null) {
+                calendar.setTime(date);
+            }
         } catch (Exception e) {
+            // Nếu không parse được, dùng ngày hiện tại
             calendar.setTime(new Date());
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+            selectedDateTime[0] = sdf.format(calendar.getTime());
+            tvSelectedDate.setText("Ngày: " + selectedDateTime[0]);
         }
 
-        // Sự kiện chọn ngày
+        // Sự kiện chọn ngày - THÊM CẢ THỜI GIAN
         tvSelectedDate.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Hiển thị dialog chọn ngày
                 DatePickerDialog datePickerDialog = new DatePickerDialog(context,
                         new DatePickerDialog.OnDateSetListener() {
                             @Override
                             public void onDateSet(android.widget.DatePicker view, int year, int month, int dayOfMonth) {
-                                // Giữ nguyên giờ phút giây cũ
-                                int hour = calendar.get(Calendar.HOUR_OF_DAY);
-                                int minute = calendar.get(Calendar.MINUTE);
-                                int second = calendar.get(Calendar.SECOND);
+                                // Cập nhật ngày
+                                calendar.set(Calendar.YEAR, year);
+                                calendar.set(Calendar.MONTH, month);
+                                calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth);
 
-                                calendar.set(year, month, dayOfMonth, hour, minute, second);
-                                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
-                                selectedDateTime[0] = sdf.format(calendar.getTime());
-                                tvSelectedDate.setText("Ngày: " + selectedDateTime[0]);
+                                // Hiển thị dialog chọn thời gian
+                                showTimePickerDialog(calendar, tvSelectedDate, selectedDateTime);
                             }
                         },
                         calendar.get(Calendar.YEAR),
@@ -242,7 +261,6 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
 
                 if (position > 0) {
                     edtCategory.setText(options[position]);
-                    // Có thể set giá mặc định nếu cần
                 } else {
                     edtCategory.setText("");
                 }
@@ -253,6 +271,7 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
             }
         });
 
+        // Trong phương thức showEditDialog của InfomationAdapter
         btnOk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -265,20 +284,11 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
                     return;
                 }
 
-                // Xử lý đơn vị k/tr
-                int newPrice;
-                try {
-                    if (newPriceStr.endsWith("k")) {
-                        newPriceStr = newPriceStr.replace("k", "");
-                        newPrice = Integer.parseInt(newPriceStr) * 1000;
-                    } else if (newPriceStr.endsWith("tr")) {
-                        newPriceStr = newPriceStr.replace("tr", "");
-                        newPrice = Integer.parseInt(newPriceStr) * 1000000;
-                    } else {
-                        newPrice = Integer.parseInt(newPriceStr);
-                    }
-                } catch (NumberFormatException e) {
-                    Toast.makeText(context, "Số tiền không hợp lệ!", Toast.LENGTH_SHORT).show();
+                // Sử dụng phương thức parse từ DBHelper
+                int newPrice = dbHelper.parsePriceFromString(newPriceStr);
+
+                if (newPrice <= 0) {
+                    Toast.makeText(context, "Số tiền không hợp lệ! Vui lòng nhập số (vd: 10000, 10k, 0.5tr)", Toast.LENGTH_LONG).show();
                     return;
                 }
 
@@ -286,12 +296,13 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
                 info.setTitle(newTitle);
                 info.setCategory(newCategory);
                 info.setPrice(newPrice);
-                info.setDate(selectedDateTime[0]); // Sử dụng ngày đã chọn
+                info.setDate(selectedDateTime[0]);
+                info.setTimestamp(dbHelper.convertDateToTimestamp(selectedDateTime[0]));
 
                 dbHelper.updateInfomation(info);
                 notifyItemChanged(position);
 
-                Toast.makeText(context, "Đã cập nhật thành công", Toast.LENGTH_SHORT).show();
+                Toast.makeText(context, "Đã cập nhật thành công: " + newCategory + " - " + newPrice + " đ", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             }
         });
@@ -302,6 +313,27 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
                 dialog.dismiss();
             }
         });
+    }
+
+    private void showTimePickerDialog(final Calendar calendar, final TextView tvSelectedDate, final String[] selectedDateTime) {
+        // Hiển thị dialog chọn thời gian
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+
+        TimePickerDialog timePickerDialog = new TimePickerDialog(context,
+                new TimePickerDialog.OnTimeSetListener() {
+                    @Override
+                    public void onTimeSet(android.widget.TimePicker view, int hourOfDay, int minute) {
+                        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                        calendar.set(Calendar.MINUTE, minute);
+                        calendar.set(Calendar.SECOND, 0);
+
+                        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+                        selectedDateTime[0] = sdf.format(calendar.getTime());
+                        tvSelectedDate.setText("Ngày: " + selectedDateTime[0]);
+                    }
+                }, hour, minute, true);
+        timePickerDialog.show();
     }
 
     private void showDeleteDialog(Infomation info, int position) {

@@ -43,8 +43,6 @@ public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
             tvContent = view.findViewById(R.id.tvContent);
             tvDate = view.findViewById(R.id.tvDate);
             cbCheck = view.findViewById(R.id.cbCheck);
-            btnEdit = view.findViewById(R.id.btnEdit);
-            btnDelete = view.findViewById(R.id.btnDelete);
         }
     }
 

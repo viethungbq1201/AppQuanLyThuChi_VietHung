@@ -8,6 +8,8 @@ public class Infomation {
     private String date;
     private int price;
     private String type;
+    private long timestamp; // Thêm timestamp
+
 
     public Infomation() {
 
@@ -61,11 +63,20 @@ public class Infomation {
         this.type = type;
     }
 
-    public Infomation(int id, String title, String category, String date, int price, String type) {
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    public Infomation(int id, String title, String category, String date, long timestamp, int price, String type) {
         this.id = id;
         this.title = title;
         this.category = category;
         this.date = date;
+        this.timestamp = timestamp;
         this.price = price;
         this.type = type;
     }

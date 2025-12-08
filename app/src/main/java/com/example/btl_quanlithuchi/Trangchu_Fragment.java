@@ -66,6 +66,9 @@ public class Trangchu_Fragment extends Fragment {
         // Load dữ liệu tất cả các giao dịch
         loadAllData();
 
+        // DEBUG: Kiểm tra dữ liệu
+        dbHelper.debugInfomationData();
+
         return view;
     }
 
