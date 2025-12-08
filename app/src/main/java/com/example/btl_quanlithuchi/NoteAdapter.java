@@ -1,202 +1,427 @@
 package com.example.btl_quanlithuchi;
 
-import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
-import android.text.TextUtils;
+import android.graphics.Paint;
+import android.os.Handler;
+import android.os.Looper;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.ImageButton;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
-public class NoteAdapter extends RecyclerView.Adapter<NoteAdapter.ViewHolder> {
-    private List<Note> noteList;
+public class NoteAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private static final int TYPE_TEXT = 0;
+    private static final int TYPE_CHECKBOX = 1;
+
+    public List<Note> notes;
     private Context context;
-    private DBHelper dbHelper;
+    private OnNoteListener onNoteListener;
 
-    public NoteAdapter(Context context, List<Note> noteList) {
-        this.context = context;
-        this.noteList = noteList;
-        this.dbHelper = new DBHelper(context);
+    // Biến lưu vị trí đang được focus để hiện thanh công cụ
+    private int currentFocusedPosition = -1;
+
+    public interface OnNoteListener {
+        void onNoteUpdated(Note note);
+        void onNoteDeleted(int noteId);
+        void onNoteAdded(Note note);
+        void onRequestSyncDatabase();
+        void onScrollToPosition(int position);
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvContent, tvDate;
-        CheckBox cbCheck;
-        ImageButton btnEdit, btnDelete;
+    public NoteAdapter(Context context, OnNoteListener onNoteListener) {
+        this.context = context;
+        this.onNoteListener = onNoteListener;
+        this.notes = new ArrayList<>();
+    }
 
-        public ViewHolder(View view) {
-            super(view);
-            tvContent = view.findViewById(R.id.tvContent);
-            tvDate = view.findViewById(R.id.tvDate);
-            cbCheck = view.findViewById(R.id.cbCheck);
+    public void setNotes(List<Note> notes) {
+        this.notes = new ArrayList<>(notes);
+        sortNotes();
+        notifyDataSetChanged();
+    }
+
+    // Hàm chèn vào đầu danh sách (dùng cho nút FAB Add)
+    public void addNoteToTop(Note note) {
+        notes.add(0, note);
+        reindexPositions();
+        notifyItemInserted(0);
+        requestKeyboardFocus(0);
+    }
+
+    // Hàm chèn xuống dưới dòng hiện tại (dùng cho phím Enter)
+    public void addNoteBelow(Note note, int index) {
+        notes.add(index, note);
+        reindexPositions();
+        notifyItemInserted(index);
+        requestKeyboardFocus(index);
+    }
+
+    // Logic sắp xếp: Chưa tick ở trên, Đã tick ở dưới
+    private void sortNotes() {
+        Collections.sort(notes, (n1, n2) -> {
+            if (n1.isChecked() != n2.isChecked()) {
+                return n1.isChecked() ? 1 : -1;
+            }
+            return Integer.compare(n1.getPosition(), n2.getPosition());
+        });
+    }
+
+    public List<Note> getNotesListInternal() { return notes; }
+
+    @Override
+    public int getItemCount() { return notes.size(); }
+
+    @Override
+    public int getItemViewType(int position) {
+        return notes.get(position).isCheckbox() ? TYPE_CHECKBOX : TYPE_TEXT;
+    }
+
+    @NonNull
+    @Override
+    public RecyclerView.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        LayoutInflater inflater = LayoutInflater.from(parent.getContext());
+        if (viewType == TYPE_CHECKBOX) {
+            View view = inflater.inflate(R.layout.item_note_checkbox, parent, false);
+            return new CheckboxViewHolder(view);
+        } else {
+            View view = inflater.inflate(R.layout.item_note_text, parent, false);
+            return new TextViewHolder(view);
         }
     }
 
     @Override
-    public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_note, parent, false);
-        return new ViewHolder(v);
+    public void onBindViewHolder(@NonNull RecyclerView.ViewHolder holder, int position) {
+        if (holder instanceof TextViewHolder) {
+            ((TextViewHolder) holder).bind(position);
+        } else if (holder instanceof CheckboxViewHolder) {
+            ((CheckboxViewHolder) holder).bind(position);
+        }
     }
 
-    @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
-        Note note = noteList.get(position);
+    // ==========================================
+    // VIEW HOLDER TEXT (Ghi chú thường)
+    // ==========================================
+    class TextViewHolder extends RecyclerView.ViewHolder {
+        LinearLayout rootLayout, layoutActions;
+        EditText etContent;
+        ImageView btnDelete;
+        TextView btnOk;
 
-        holder.tvContent.setText(note.getContent());
-        holder.tvDate.setText(note.getCreatedDate());
+        // Cờ hiệu để tránh vòng lặp vô hạn khi setText trong TextWatcher
+        private boolean isUpdating = false;
 
-        if (note.hasCheckbox()) {
-            holder.cbCheck.setVisibility(View.VISIBLE);
-            holder.cbCheck.setChecked(note.isChecked());
+        TextViewHolder(View itemView) {
+            super(itemView);
+            rootLayout = itemView.findViewById(R.id.root_layout);
+            layoutActions = itemView.findViewById(R.id.layout_actions);
+            etContent = itemView.findViewById(R.id.et_note_content);
+            btnDelete = itemView.findViewById(R.id.btn_delete);
+            btnOk = itemView.findViewById(R.id.btn_ok);
 
-            holder.cbCheck.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-                @Override
-                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    note.setChecked(isChecked);
-                    dbHelper.updateNoteCheckStatus(note.getId(), isChecked);
+            rootLayout.setOnClickListener(v -> {
+                etContent.requestFocus();
+                showKeyboard(etContent);
+            });
+
+            etContent.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus) {
+                    currentFocusedPosition = getAdapterPosition();
+                    layoutActions.setVisibility(View.VISIBLE);
+                } else {
+                    layoutActions.setVisibility(View.GONE);
+                    if (!isUpdating) {
+                        saveContent(getAdapterPosition(), etContent.getText().toString());
+                    }
                 }
             });
-        } else {
-            holder.cbCheck.setVisibility(View.GONE);
+
+            btnOk.setOnClickListener(v -> {
+                etContent.clearFocus();
+                currentFocusedPosition = -1;
+                hideKeyboard(itemView);
+            });
+            btnDelete.setOnClickListener(v -> deleteItem(getAdapterPosition()));
+
+            // SỬ DỤNG TEXTWATCHER ĐỂ BẮT SỰ KIỆN ENTER TRÊN ĐIỆN THOẠI
+            etContent.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (isUpdating) return;
+
+                    String text = s.toString();
+                    if (text.contains("\n")) { // Phát hiện xuống dòng
+                        isUpdating = true; // Khóa cập nhật
+
+                        // Xóa ký tự xuống dòng
+                        String cleanText = text.replace("\n", "");
+                        etContent.setText(cleanText);
+                        etContent.setSelection(cleanText.length());
+
+                        // Thực hiện logic chuyển đổi thành Checkbox
+                        convertTextToCheckboxList(getAdapterPosition(), cleanText);
+
+                        isUpdating = false; // Mở khóa
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
         }
 
-        // Click để sửa
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showEditNoteDialog(note, position);
-            }
-        });
+        void bind(int position) {
+            Note note = notes.get(position);
 
-        // Long click để xóa
-        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                showDeleteDialog(note, position);
-                return true;
-            }
-        });
+            isUpdating = true; // Khóa khi bind data
+            etContent.setText(note.getContent());
+            isUpdating = false;
 
-        // Nút sửa (nếu cần)
-        holder.btnEdit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showEditNoteDialog(note, position);
+            if (position == currentFocusedPosition) {
+                layoutActions.setVisibility(View.VISIBLE);
+                etContent.requestFocus();
+                etContent.post(() -> showKeyboard(etContent));
+            } else {
+                layoutActions.setVisibility(View.GONE);
             }
-        });
-
-        // Nút xóa (nếu cần)
-        holder.btnDelete.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showDeleteDialog(note, position);
-            }
-        });
+        }
     }
 
-    private void showEditNoteDialog(Note note, int position) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        View view = LayoutInflater.from(context).inflate(R.layout.dialog_note, null);
-        builder.setView(view);
+    // ==========================================
+    // VIEW HOLDER CHECKBOX (Ghi chú dạng list)
+    // ==========================================
+    class CheckboxViewHolder extends RecyclerView.ViewHolder {
+        LinearLayout rootLayout, layoutActions;
+        CheckBox checkBox;
+        EditText etContent;
+        ImageView btnDelete;
+        TextView btnOk;
 
-        AlertDialog dialog = builder.create();
-        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        private boolean isUpdating = false;
 
-        EditText etContent = view.findViewById(R.id.etContent);
-        CheckBox cbHasCheckbox = view.findViewById(R.id.cbHasCheckbox);
-        CheckBox cbIsChecked = view.findViewById(R.id.cbIsChecked);
-        Button btnSave = view.findViewById(R.id.btnSave);
-        Button btnCancel = view.findViewById(R.id.btnCancel);
+        CheckboxViewHolder(View itemView) {
+            super(itemView);
+            rootLayout = itemView.findViewById(R.id.root_layout);
+            layoutActions = itemView.findViewById(R.id.layout_actions);
+            checkBox = itemView.findViewById(R.id.checkbox_note);
+            etContent = itemView.findViewById(R.id.et_checkbox_content);
+            btnDelete = itemView.findViewById(R.id.btn_delete);
+            btnOk = itemView.findViewById(R.id.btn_ok);
 
-        // Hiển thị dữ liệu cũ
-        etContent.setText(note.getContent());
-        cbHasCheckbox.setChecked(note.hasCheckbox());
-        cbIsChecked.setChecked(note.isChecked());
+            rootLayout.setOnClickListener(v -> {
+                etContent.requestFocus();
+                showKeyboard(etContent);
+            });
 
-        // Ẩn/hiện checkbox "Đã hoàn thành" dựa trên "Có checkbox"
-        cbIsChecked.setVisibility(note.hasCheckbox() ? View.VISIBLE : View.GONE);
-
-        cbHasCheckbox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                cbIsChecked.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-                if (!isChecked) {
-                    cbIsChecked.setChecked(false);
-                }
-            }
-        });
-
-        btnSave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String content = etContent.getText().toString().trim();
-                if (TextUtils.isEmpty(content)) {
-                    Toast.makeText(context, "Vui lòng nhập nội dung ghi chú", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                note.setContent(content);
-                note.setHasCheckbox(cbHasCheckbox.isChecked());
-                note.setChecked(cbIsChecked.isChecked());
-                note.setCreatedDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
-
-                dbHelper.updateNote(note);
-                notifyItemChanged(position);
-
-                Toast.makeText(context, "Đã cập nhật ghi chú", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
-            }
-        });
-
-        btnCancel.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dialog.dismiss();
-            }
-        });
-
-        dialog.show();
-    }
-
-    private void showDeleteDialog(Note note, int position) {
-        new AlertDialog.Builder(context)
-                .setTitle("Xác nhận xóa")
-                .setMessage("Bạn có chắc muốn xóa ghi chú này?")
-                .setPositiveButton("Xóa", new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dbHelper.deleteNote(note.getId());
-                        noteList.remove(position);
-                        notifyItemRemoved(position);
-                        notifyItemRangeChanged(position, noteList.size());
-                        Toast.makeText(context, "Đã xóa ghi chú", Toast.LENGTH_SHORT).show();
+            etContent.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus) {
+                    currentFocusedPosition = getAdapterPosition();
+                    layoutActions.setVisibility(View.VISIBLE);
+                } else {
+                    layoutActions.setVisibility(View.GONE);
+                    if (!isUpdating) {
+                        saveContent(getAdapterPosition(), etContent.getText().toString());
                     }
-                })
-                .setNegativeButton("Hủy", null)
-                .show();
+                }
+            });
+
+            btnOk.setOnClickListener(v -> {
+                etContent.clearFocus();
+                currentFocusedPosition = -1;
+                hideKeyboard(itemView);
+            });
+            btnDelete.setOnClickListener(v -> deleteItem(getAdapterPosition()));
+
+            checkBox.setOnClickListener(v -> {
+                int pos = getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    Note note = notes.get(pos);
+                    boolean isChecked = checkBox.isChecked();
+                    note.setChecked(isChecked);
+                    updateAppearance(isChecked);
+                    onNoteListener.onNoteUpdated(note);
+
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        sortNotes();
+                        notifyDataSetChanged();
+                        if (currentFocusedPosition == pos) {
+                            currentFocusedPosition = -1;
+                            hideKeyboard(itemView);
+                        }
+                    }, 300);
+                }
+            });
+
+            // SỬ DỤNG TEXTWATCHER CHO CHECKBOX (Thay vì OnKeyListener)
+            etContent.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    if (isUpdating) return;
+
+                    String text = s.toString();
+                    if (text.contains("\n")) { // Phát hiện xuống dòng
+                        isUpdating = true;
+
+                        String cleanText = text.replace("\n", "");
+                        etContent.setText(cleanText);
+                        etContent.setSelection(cleanText.length());
+
+                        // Lưu nội dung hiện tại
+                        saveContent(getAdapterPosition(), cleanText);
+
+                        // Tạo dòng mới
+                        addNewCheckboxBelow(getAdapterPosition());
+
+                        isUpdating = false;
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+        }
+
+        void bind(int position) {
+            Note note = notes.get(position);
+            checkBox.setOnClickListener(null); // Gỡ listener tạm thời
+
+            isUpdating = true;
+            etContent.setText(note.getContent());
+            isUpdating = false;
+
+            checkBox.setChecked(note.isChecked());
+            updateAppearance(note.isChecked());
+
+            // Gắn lại listener click
+            checkBox.setOnClickListener(v -> {
+                int pos = getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    Note n = notes.get(pos);
+                    n.setChecked(checkBox.isChecked());
+                    updateAppearance(checkBox.isChecked());
+                    onNoteListener.onNoteUpdated(n);
+
+                    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                        sortNotes();
+                        notifyDataSetChanged();
+                    }, 300);
+                }
+            });
+
+            if (position == currentFocusedPosition) {
+                layoutActions.setVisibility(View.VISIBLE);
+                etContent.requestFocus();
+                etContent.post(() -> showKeyboard(etContent));
+            } else {
+                layoutActions.setVisibility(View.GONE);
+            }
+        }
+
+        void updateAppearance(boolean isChecked) {
+            if (isChecked) {
+                etContent.setAlpha(0.5f);
+                etContent.setPaintFlags(etContent.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
+            } else {
+                etContent.setAlpha(1.0f);
+                etContent.setPaintFlags(etContent.getPaintFlags() & (~Paint.STRIKE_THRU_TEXT_FLAG));
+            }
+        }
     }
 
-    @Override
-    public int getItemCount() {
-        return noteList.size();
+    // ==========================================
+    // LOGIC XỬ LÝ (CORE)
+    // ==========================================
+
+    private void convertTextToCheckboxList(int position, String currentContent) {
+        if(position < 0 || position >= notes.size()) return;
+
+        // Biến dòng hiện tại thành checkbox nhưng giữ nguyên vị trí
+        Note currentNote = notes.get(position);
+        currentNote.setCheckbox(true);
+        currentNote.setContent(currentContent);
+
+        // Tạo checkbox mới để chèn xuống dưới
+        Note newNote = new Note("");
+        newNote.setCheckbox(true);
+
+        // Chèn vào ngay bên dưới dòng hiện tại (position + 1)
+        addNoteBelow(newNote, position + 1);
+
+        onNoteListener.onRequestSyncDatabase();
     }
 
-    public void setData(List<Note> newList) {
-        this.noteList = newList;
-        notifyDataSetChanged();
+    private void addNewCheckboxBelow(int position) {
+        Note newNote = new Note("");
+        newNote.setCheckbox(true);
+
+        // Chèn vào ngay bên dưới
+        addNoteBelow(newNote, position + 1);
+
+        onNoteListener.onNoteAdded(newNote);
+    }
+
+    private void deleteItem(int position) {
+        if (position >= 0 && position < notes.size()) {
+            int id = notes.get(position).getId();
+            notes.remove(position);
+            reindexPositions();
+            notifyItemRemoved(position);
+            notifyItemRangeChanged(position, notes.size());
+            onNoteListener.onNoteDeleted(id);
+        }
+    }
+
+    private void saveContent(int position, String content) {
+        if (position >= 0 && position < notes.size()) {
+            Note note = notes.get(position);
+            if (!content.equals(note.getContent())) {
+                note.setContent(content);
+                onNoteListener.onNoteUpdated(note);
+            }
+        }
+    }
+
+    private void reindexPositions() {
+        for (int i = 0; i < notes.size(); i++) {
+            notes.get(i).setPosition(i);
+        }
+    }
+
+    private void requestKeyboardFocus(int position) {
+        currentFocusedPosition = position;
+        onNoteListener.onScrollToPosition(position);
+    }
+
+    private void showKeyboard(View view) {
+        InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT);
+        }
+    }
+
+    private void hideKeyboard(View view) {
+        InputMethodManager imm = (InputMethodManager) context.getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+        }
     }
 }

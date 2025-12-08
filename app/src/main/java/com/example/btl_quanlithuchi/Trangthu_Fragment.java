@@ -64,8 +64,6 @@ public class Trangthu_Fragment extends Fragment {
 
         dbHelper = new DBHelper(getContext());
 
-        // DEBUG: Kiểm tra dữ liệu
-        dbHelper.debugAllData();
 
         // Lấy tháng hiện tại
         currentMonthYear = new SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(new Date());
@@ -226,6 +224,8 @@ public class Trangthu_Fragment extends Fragment {
             Infomation inf = new Infomation();
 
             String category = editCategory.getText().toString();
+            category = DBHelper.capitalizeCategory(category);
+
             String priceInput = editPrice.getText().toString();
 
             if (isEmpty(category)) {

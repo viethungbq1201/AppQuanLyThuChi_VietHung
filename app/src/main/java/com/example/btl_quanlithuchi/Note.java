@@ -1,60 +1,62 @@
 package com.example.btl_quanlithuchi;
 
+import java.sql.Date;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Note {
     private int id;
     private String content;
-    private boolean hasCheckbox;
+    private boolean isCheckbox;
     private boolean isChecked;
-    private String createdDate;
+    private boolean isGroup;
+    private String groupName;
+    private int groupId;
+    private int position;
+    private Date createdAt;
 
-    public Note() {
-    }
+    public Note() {}
 
-    public Note(String content, boolean hasCheckbox, String createdDate) {
+    public Note(String content) {
         this.content = content;
-        this.hasCheckbox = hasCheckbox;
-        this.createdDate = createdDate;
+        this.isCheckbox = false;
         this.isChecked = false;
+        this.isGroup = false;
+        this.groupId = -1;
     }
 
-    // Getter và Setter
-    public int getId() {
-        return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
-    }
-
-    public String getContent() {
-        return content;
-    }
-
-    public void setContent(String content) {
+    public Note(String content, boolean isCheckbox) {
         this.content = content;
+        this.isCheckbox = isCheckbox;
+        this.isChecked = false;
+        this.isGroup = false;
+        this.groupId = -1;
     }
 
-    public boolean hasCheckbox() {
-        return hasCheckbox;
-    }
+    // Getters and Setters
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
 
-    public void setHasCheckbox(boolean hasCheckbox) {
-        this.hasCheckbox = hasCheckbox;
-    }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
 
-    public boolean isChecked() {
-        return isChecked;
-    }
+    public boolean isCheckbox() { return isCheckbox; }
+    public void setCheckbox(boolean checkbox) { isCheckbox = checkbox; }
 
-    public void setChecked(boolean checked) {
-        isChecked = checked;
-    }
+    public boolean isChecked() { return isChecked; }
+    public void setChecked(boolean checked) { isChecked = checked; }
 
-    public String getCreatedDate() {
-        return createdDate;
-    }
+    public boolean isGroup() { return isGroup; }
+    public void setGroup(boolean group) { isGroup = group; }
 
-    public void setCreatedDate(String createdDate) {
-        this.createdDate = createdDate;
-    }
+    public String getGroupName() { return groupName; }
+    public void setGroupName(String groupName) { this.groupName = groupName; }
+
+    public int getGroupId() { return groupId; }
+    public void setGroupId(int groupId) { this.groupId = groupId; }
+
+    public int getPosition() { return position; }
+
+    public void setPosition(int position) { this.position = position; }
+
 }

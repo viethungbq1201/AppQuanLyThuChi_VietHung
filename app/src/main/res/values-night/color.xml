@@ -46,4 +46,6 @@
     <color name="chart_text">#FFFFFF</color>
     <color name="chart_hole">#FFFFFF</color> <!-- Màu trắng cho lỗ tròn biểu đồ -->
     <color name="chart_transparent_circle">#404040</color> <!-- Vòng trong mờ -->
+
+
 </resources>

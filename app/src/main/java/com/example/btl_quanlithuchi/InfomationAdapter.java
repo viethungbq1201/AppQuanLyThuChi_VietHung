@@ -263,6 +263,8 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
             public void onClick(View v) {
                 String newTitle = "";
                 String newCategory = edtCategory.getText().toString();
+                newCategory = DBHelper.capitalizeCategory(newCategory);
+
                 String newPriceStr = edtPrice.getText().toString();
 
                 if (TextUtils.isEmpty(newCategory) || TextUtils.isEmpty(newPriceStr)) {

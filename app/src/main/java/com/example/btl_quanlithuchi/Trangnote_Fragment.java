@@ -1,124 +1,157 @@
 package com.example.btl_quanlithuchi;
 
-import android.app.AlertDialog;
 import android.os.Bundle;
-import android.text.TextUtils;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.EditText;
-import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
-public class Trangnote_Fragment extends Fragment {
+public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteListener {
 
-    private RecyclerView rvNotes;
+    private RecyclerView recyclerView;
     private NoteAdapter noteAdapter;
+    private FloatingActionButton fabAdd;
     private DBHelper dbHelper;
-    private FloatingActionButton fabAddNote;
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.trang_note, container, false);
 
+        recyclerView = view.findViewById(R.id.recyclerView_notes);
+        fabAdd = view.findViewById(R.id.fab_add_note);
+
+
         dbHelper = new DBHelper(getContext());
-        rvNotes = view.findViewById(R.id.rvNotes);
-        fabAddNote = view.findViewById(R.id.fabAddNote);
 
-        // Setup RecyclerView
-        rvNotes.setLayoutManager(new LinearLayoutManager(getContext()));
-        List<Note> noteList = dbHelper.getAllNotes();
-        noteAdapter = new NoteAdapter(getContext(), noteList);
-        rvNotes.setAdapter(noteAdapter);
+        setupRecyclerView();
+        loadNotes();
 
-        // Nút thêm ghi chú
-        fabAddNote.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showAddNoteDialog();
-            }
-        });
+        fabAdd.setOnClickListener(v -> addNewNote());
 
         return view;
     }
 
-    private void showAddNoteDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_note, null);
-        builder.setView(view);
+    private void setupRecyclerView() {
+        noteAdapter = new NoteAdapter(getContext(), this);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(getContext());
+        // Giúp bàn phím đẩy view lên mượt hơn
+        layoutManager.setStackFromEnd(false);
+        recyclerView.setLayoutManager(layoutManager);
+        recyclerView.setItemAnimator(null); // Tắt animation để tránh giật focus
+        recyclerView.setAdapter(noteAdapter);
 
-        AlertDialog dialog = builder.create();
-        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
-
-        EditText etContent = view.findViewById(R.id.etContent);
-        CheckBox cbHasCheckbox = view.findViewById(R.id.cbHasCheckbox);
-        CheckBox cbIsChecked = view.findViewById(R.id.cbIsChecked);
-        Button btnSave = view.findViewById(R.id.btnSave);
-        Button btnCancel = view.findViewById(R.id.btnCancel);
-
-        // Ẩn checkbox "Đã hoàn thành" ban đầu
-        cbIsChecked.setVisibility(View.GONE);
-
-        cbHasCheckbox.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            cbIsChecked.setVisibility(isChecked ? View.VISIBLE : View.GONE);
-        });
-
-        btnSave.setOnClickListener(new View.OnClickListener() {
+        // Kéo thả sắp xếp
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
             @Override
-            public void onClick(View v) {
-                String content = etContent.getText().toString().trim();
-                if (TextUtils.isEmpty(content)) {
-                    Toast.makeText(getContext(), "Vui lòng nhập nội dung ghi chú", Toast.LENGTH_SHORT).show();
-                    return;
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                int fromPos = viewHolder.getAdapterPosition();
+                int toPos = target.getAdapterPosition();
+
+                // Chỉ cho phép sắp xếp các item cùng loại (cùng tick hoặc cùng chưa tick)
+                if (noteAdapter.notes.get(fromPos).isChecked() == noteAdapter.notes.get(toPos).isChecked()) {
+                    Collections.swap(noteAdapter.notes, fromPos, toPos);
+                    noteAdapter.notifyItemMoved(fromPos, toPos);
+                    return true;
                 }
-
-                Note note = new Note();
-                note.setContent(content);
-                note.setHasCheckbox(cbHasCheckbox.isChecked());
-                note.setChecked(cbIsChecked.isChecked());
-                note.setCreatedDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
-
-                dbHelper.insertNote(note);
-
-                // Cập nhật danh sách
-                List<Note> updatedList = dbHelper.getAllNotes();
-                noteAdapter.setData(updatedList);
-
-                Toast.makeText(getContext(), "Đã thêm ghi chú", Toast.LENGTH_SHORT).show();
-                dialog.dismiss();
+                return false;
             }
-        });
 
-        btnCancel.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                dialog.dismiss();
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) { }
+
+            @Override
+            public void clearView(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder) {
+                super.clearView(recyclerView, viewHolder);
+                onRequestSyncDatabase(); // Lưu vị trí sau khi thả
             }
         });
+        itemTouchHelper.attachToRecyclerView(recyclerView);
+    }
 
-        dialog.show();
+    private void loadNotes() {
+        new Thread(() -> {
+            List<Note> notes = dbHelper.getAllNotes();
+            new Handler(Looper.getMainLooper()).post(() -> {
+                noteAdapter.setNotes(notes);
+            });
+        }).start();
+    }
+
+    private void addNewNote() {
+        Note newNote = new Note("");
+        newNote.setPosition(0); // Quan trọng: Đặt vị trí là 0 để lên đầu
+
+        long id = dbHelper.addNote(newNote);
+        if (id != -1) {
+            newNote.setId((int) id);
+
+            // Gọi hàm mới trong Adapter để chèn lên đầu
+            noteAdapter.addNoteToTop(newNote);
+
+            // Cuộn lên đầu trang
+            recyclerView.scrollToPosition(0);
+
+            // Vì ta chèn vào đầu, toàn bộ các note cũ phải lùi position +1
+            // Gọi sync để cập nhật lại position trong Database cho chuẩn
+            // (Chạy ngầm để không giật UI)
+            new Thread(() -> {
+                List<Note> allNotes = noteAdapter.getNotesListInternal();
+                for (Note n : allNotes) {
+                    dbHelper.updateNotePosition(n.getId(), n.getPosition());
+                }
+            }).start();
+        }
+    }
+
+    // --- CÁC HÀM INTERFACE ---
+
+    @Override
+    public void onNoteUpdated(Note note) { dbHelper.updateNote(note); }
+
+    @Override
+    public void onNoteDeleted(int noteId) { dbHelper.deleteNote(noteId); }
+
+    @Override
+    public void onNoteAdded(Note note) {
+        long id = dbHelper.addNote(note);
+        note.setId((int) id);
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        if (dbHelper != null && noteAdapter != null) {
-            List<Note> updatedList = dbHelper.getAllNotes();
-            noteAdapter.setData(updatedList);
+    public void onRequestSyncDatabase() {
+        List<Note> allNotes = noteAdapter.getNotesListInternal();
+        for (int i = 0; i < allNotes.size(); i++) {
+            Note note = allNotes.get(i);
+            note.setPosition(i); // Đảm bảo vị trí đúng
+
+            if (note.getId() == 0) {
+                long id = dbHelper.addNote(note);
+                note.setId((int) id);
+            } else {
+                dbHelper.updateNote(note);
+            }
         }
+    }
+
+    @Override
+    public void onScrollToPosition(int position) {
+        // Cuộn tới vị trí chỉ định
+        recyclerView.smoothScrollToPosition(position);
     }
 }

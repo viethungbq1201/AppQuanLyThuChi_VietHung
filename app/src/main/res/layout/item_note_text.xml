@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginVertical="6dp"
+    android:background="@drawable/note_background"
+    android:clickable="true"
+    android:focusable="true"
+    android:descendantFocusability="afterDescendants"
+    android:elevation="1dp"> <LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp"> <EditText
+    android:id="@+id/et_note_content"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@null"
+    android:hint="Nhập ghi chú..."
+    android:inputType="textMultiLine|textCapSentences"
+    android:maxLines="10"
+    android:textSize="16sp"
+    android:textColor="@color/text_primary"
+    android:lineSpacingMultiplier="1.2"
+    android:includeFontPadding="false" />
+</LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/layout_actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="end|center_vertical"
+        android:paddingHorizontal="8dp"
+        android:paddingBottom="8dp"
+        android:visibility="gone">
+
+        <ImageView
+            android:id="@+id/btn_delete"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:src="@android:drawable/ic_menu_delete"
+            android:padding="8dp"
+            app:tint="#FF5252"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Xóa ghi chú"/>
+
+        <TextView
+            android:id="@+id/btn_ok"
+            android:layout_width="wrap_content"
+            android:layout_height="40dp"
+            android:text="OK"
+            android:gravity="center"
+            android:textStyle="bold"
+            android:textColor="#4CAF50"
+            android:paddingHorizontal="16dp"
+            android:layout_marginStart="8dp"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"/>
+    </LinearLayout>
+</LinearLayout>

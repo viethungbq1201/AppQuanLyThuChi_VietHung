@@ -54,7 +54,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
-        android:hint="Giá tiền (vd: 10000, 10k, 0.5tr)"
+        android:hint="Giá tiền"
         android:textColorHint="@color/text_hint"
         android:textColor="@color/text_primary"
         android:inputType="text"

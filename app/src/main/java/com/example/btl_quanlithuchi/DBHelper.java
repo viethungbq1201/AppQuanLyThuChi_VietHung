@@ -5,24 +5,32 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.icu.text.SimpleDateFormat;
 import android.util.Log;
 
-import com.github.mikephil.charting.data.Entry;
+import com.example.btl_quanlithuchi.Note;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 
 public class DBHelper extends SQLiteOpenHelper {
     private static final String DB_NAME = "WalletDB";
-    private static final int DB_VERSION = 3; // Tăng version lên 3
-    private static final String TAG = "DBHelper"; // Thêm TAG cho log
+    private static final int DB_VERSION = 4; // Tăng version để cập nhật bảng Notes
+    private static final String TAG = "DBHelper";
 
+    // --- KHAI BÁO CÁC CỘT CHO BẢNG NOTES (Lấy từ file 2) ---
+    private static final String TABLE_NOTES = "notes";
+    private static final String COLUMN_ID = "id";
+    private static final String COLUMN_CONTENT = "content";
+    private static final String COLUMN_IS_CHECKBOX = "is_checkbox";
+    private static final String COLUMN_IS_CHECKED = "is_checked";
+    private static final String COLUMN_IS_GROUP = "is_group";
+    private static final String COLUMN_GROUP_NAME = "group_name";
+    private static final String COLUMN_GROUP_ID = "group_id";
+    private static final String COLUMN_POSITION = "position";
 
     public DBHelper(Context context) {
         super(context, DB_NAME, null, DB_VERSION);
@@ -30,92 +38,112 @@ public class DBHelper extends SQLiteOpenHelper {
 
     @Override
     public void onCreate(SQLiteDatabase db) {
-        // Bảng thông tin thu chi - THÊM CỘT timestamp
-        String query = "CREATE TABLE Infomations (" +
+        // 1. Bảng thông tin thu chi (Giữ nguyên từ file 1)
+        String createInfoTable = "CREATE TABLE Infomations (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
                 "title TEXT, " +
                 "category TEXT, " +
                 "date TEXT, " +
-                "timestamp INTEGER, " + // Thêm cột timestamp để sắp xếp
+                "timestamp INTEGER, " +
                 "price INTEGER, " +
                 "type TEXT)";
-        db.execSQL(query);
+        db.execSQL(createInfoTable);
 
-        // Bảng ghi chú
-        String createNoteTable = "CREATE TABLE Notes (" +
-                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                "content TEXT, " +
-                "has_checkbox INTEGER DEFAULT 0, " +
-                "is_checked INTEGER DEFAULT 0, " +
-                "created_date TEXT, " +
-                "created_timestamp INTEGER)"; // Thêm timestamp
+        // 2. Bảng ghi chú (Sử dụng cấu trúc chi tiết từ file 2)
+        String createNoteTable = "CREATE TABLE " + TABLE_NOTES + "("
+                + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                + COLUMN_CONTENT + " TEXT,"
+                + COLUMN_IS_CHECKBOX + " INTEGER DEFAULT 0,"
+                + COLUMN_IS_CHECKED + " INTEGER DEFAULT 0,"
+                + COLUMN_IS_GROUP + " INTEGER DEFAULT 0,"
+                + COLUMN_GROUP_NAME + " TEXT,"
+                + COLUMN_GROUP_ID + " INTEGER DEFAULT -1,"
+                + COLUMN_POSITION + " INTEGER)";
         db.execSQL(createNoteTable);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        // Xử lý nâng cấp cho bảng Infomations (Giữ nguyên logic cũ)
         if (oldVersion < 3) {
-            // Thêm cột timestamp nếu nâng cấp từ version cũ
-            db.execSQL("ALTER TABLE Infomations ADD COLUMN timestamp INTEGER DEFAULT 0");
-
-            // Cập nhật timestamp cho các bản ghi cũ
-            Cursor cursor = db.rawQuery("SELECT id, date FROM Infomations", null);
-            while (cursor.moveToNext()) {
-                int id = cursor.getInt(0);
-                String dateStr = cursor.getString(1);
-
-                try {
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
-                    Date date = sdf.parse(dateStr);
-                    long timestamp = date.getTime();
-
-                    ContentValues values = new ContentValues();
-                    values.put("timestamp", timestamp);
-                    db.update("Infomations", values, "id = ?", new String[]{String.valueOf(id)});
-                } catch (Exception e) {
-                    // Nếu không parse được, dùng timestamp hiện tại
-                    ContentValues values = new ContentValues();
-                    values.put("timestamp", System.currentTimeMillis());
-                    db.update("Infomations", values, "id = ?", new String[]{String.valueOf(id)});
-                }
+            try {
+                db.execSQL("ALTER TABLE Infomations ADD COLUMN timestamp INTEGER DEFAULT 0");
+                updateTimestampForOldData(db);
+            } catch (Exception e) {
+                Log.e(TAG, "Column timestamp might already exist");
             }
-            cursor.close();
+        }
+
+        // Xử lý nâng cấp cho bảng Notes
+        // Vì cấu trúc bảng Notes thay đổi nhiều, ta sẽ xóa bảng cũ và tạo lại để tránh lỗi
+        // Lưu ý: Dữ liệu ghi chú cũ sẽ mất nếu version < 4
+        if (oldVersion < 4) {
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NOTES);
+            // Cũng xóa bảng Notes cũ nếu tên khác (file 1 đặt tên là Notes viết hoa)
+            db.execSQL("DROP TABLE IF EXISTS Notes");
+
+            // Tạo lại bảng Notes mới
+            String createNoteTable = "CREATE TABLE " + TABLE_NOTES + "("
+                    + COLUMN_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                    + COLUMN_CONTENT + " TEXT,"
+                    + COLUMN_IS_CHECKBOX + " INTEGER DEFAULT 0,"
+                    + COLUMN_IS_CHECKED + " INTEGER DEFAULT 0,"
+                    + COLUMN_IS_GROUP + " INTEGER DEFAULT 0,"
+                    + COLUMN_GROUP_NAME + " TEXT,"
+                    + COLUMN_GROUP_ID + " INTEGER DEFAULT -1,"
+                    + COLUMN_POSITION + " INTEGER)";
+            db.execSQL(createNoteTable);
         }
     }
 
+    // Hàm phụ trợ để cập nhật timestamp (tách ra cho gọn)
+    private void updateTimestampForOldData(SQLiteDatabase db) {
+        Cursor cursor = db.rawQuery("SELECT id, date FROM Infomations", null);
+        while (cursor.moveToNext()) {
+            int id = cursor.getInt(0);
+            String dateStr = cursor.getString(1);
+            long timestamp;
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+                Date date = sdf.parse(dateStr);
+                timestamp = date.getTime();
+            } catch (Exception e) {
+                timestamp = System.currentTimeMillis();
+            }
+            ContentValues values = new ContentValues();
+            values.put("timestamp", timestamp);
+            db.update("Infomations", values, "id = ?", new String[]{String.valueOf(id)});
+        }
+        cursor.close();
+    }
 
-    // ========== CÁC PHƯƠNG THỨC CHO THU CHI ==========
 
-    // Thêm dữ liệu
+    // ====================================================================
+    // PHẦN 1: CÁC PHƯƠNG THỨC CHO THU CHI (INFOMATION) - TỪ FILE 1
+    // ====================================================================
+
     public void insertInfomation(Infomation inf) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-
         values.put("title", inf.getTitle());
         values.put("category", inf.getCategory());
         values.put("date", inf.getDate());
         values.put("price", inf.getPrice());
         values.put("type", inf.getType());
-        values.put("timestamp", inf.getTimestamp()); // Thêm timestamp
-
+        values.put("timestamp", inf.getTimestamp());
         db.insert("Infomations", null, values);
         db.close();
     }
 
-    // Lấy tất cả dữ liệu (giữ nguyên)
     public List<Infomation> getInfomationsByType(String type) {
         List<Infomation> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-
         Cursor cursor;
         if (type.equals("all")) {
             cursor = db.rawQuery("SELECT * FROM Infomations ORDER BY timestamp DESC", null);
         } else {
             cursor = db.rawQuery("SELECT * FROM Infomations WHERE type = ? ORDER BY timestamp DESC", new String[]{type});
         }
-
-        Log.d(TAG, "Getting infomations by type: " + type + ", count: " + cursor.getCount());
-
         if (cursor.moveToFirst()) {
             do {
                 Infomation inf = new Infomation();
@@ -127,31 +155,22 @@ public class DBHelper extends SQLiteOpenHelper {
                 inf.setPrice(cursor.getInt(5));
                 inf.setType(cursor.getString(6));
                 list.add(inf);
-
-                // DEBUG: Log từng item
-                Log.d(TAG, "Loaded item - ID: " + inf.getId() + ", Price: " + inf.getPrice() + ", Category: " + inf.getCategory());
             } while (cursor.moveToNext());
         }
-
         cursor.close();
         db.close();
         return list;
     }
 
-    // Lấy dữ liệu theo tháng - SẮP XẾP THEO TIMESTAMP
     public List<Infomation> getInfomationsByMonth(String type, String monthYear) {
         List<Infomation> list = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-
         Cursor cursor;
         if (type.equals("all")) {
-            cursor = db.rawQuery("SELECT * FROM Infomations WHERE substr(date, 4, 7) = ? ORDER BY timestamp DESC",
-                    new String[]{monthYear});
+            cursor = db.rawQuery("SELECT * FROM Infomations WHERE substr(date, 4, 7) = ? ORDER BY timestamp DESC", new String[]{monthYear});
         } else {
-            cursor = db.rawQuery("SELECT * FROM Infomations WHERE type = ? AND substr(date, 4, 7) = ? ORDER BY timestamp DESC",
-                    new String[]{type, monthYear});
+            cursor = db.rawQuery("SELECT * FROM Infomations WHERE type = ? AND substr(date, 4, 7) = ? ORDER BY timestamp DESC", new String[]{type, monthYear});
         }
-
         if (cursor.moveToFirst()) {
             do {
                 Infomation inf = new Infomation();
@@ -165,14 +184,11 @@ public class DBHelper extends SQLiteOpenHelper {
                 list.add(inf);
             } while (cursor.moveToNext());
         }
-
         cursor.close();
         db.close();
         return list;
     }
 
-
-    // Update thông tin với timestamp
     public void updateInfomation(Infomation info) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
@@ -182,10 +198,7 @@ public class DBHelper extends SQLiteOpenHelper {
         values.put("date", info.getDate());
         values.put("timestamp", info.getTimestamp());
         values.put("type", info.getType());
-
-        int rows = db.update("Infomations", values, "id = ?", new String[]{String.valueOf(info.getId())});
-        Log.d(TAG, "Updated infomation - ID: " + info.getId() + ", Rows affected: " + rows + ", New Price: " + info.getPrice());
-
+        db.update("Infomations", values, "id = ?", new String[]{String.valueOf(info.getId())});
         db.close();
     }
 
@@ -196,48 +209,35 @@ public class DBHelper extends SQLiteOpenHelper {
     }
 
     public int getTotalIncome() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT SUM(price) FROM Infomations WHERE type = 'thu'", null);
-        int total = 0;
-        if (cursor.moveToFirst()) {
-            total = cursor.getInt(0);
-        }
-        Log.d(TAG, "Total income: " + total);
-        cursor.close();
-        return total;
+        return getTotalAmount("thu");
     }
 
-    // Lấy tổng chi
     public int getTotalExpense() {
+        return getTotalAmount("chi");
+    }
+
+    private int getTotalAmount(String type) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT SUM(price) FROM Infomations WHERE type = 'chi'", null);
+        Cursor cursor = db.rawQuery("SELECT SUM(price) FROM Infomations WHERE type = ?", new String[]{type});
         int total = 0;
         if (cursor.moveToFirst()) {
             total = cursor.getInt(0);
         }
-        Log.d(TAG, "Total expense: " + total);
         cursor.close();
         return total;
     }
 
-    // Lấy tổng thu theo tháng
     public int getTotalIncomeByMonth(String monthYear) {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT SUM(price) FROM Infomations WHERE type = 'thu' AND substr(date, 4, 7) = ?",
-                new String[]{monthYear});
-        int total = 0;
-        if (cursor.moveToFirst()) {
-            total = cursor.getInt(0);
-        }
-        cursor.close();
-        return total;
+        return getTotalAmountByMonth("thu", monthYear);
     }
 
-    // Lấy tổng chi theo tháng
     public int getTotalExpenseByMonth(String monthYear) {
+        return getTotalAmountByMonth("chi", monthYear);
+    }
+
+    private int getTotalAmountByMonth(String type, String monthYear) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT SUM(price) FROM Infomations WHERE type = 'chi' AND substr(date, 4, 7) = ?",
-                new String[]{monthYear});
+        Cursor cursor = db.rawQuery("SELECT SUM(price) FROM Infomations WHERE type = ? AND substr(date, 4, 7) = ?", new String[]{type, monthYear});
         int total = 0;
         if (cursor.moveToFirst()) {
             total = cursor.getInt(0);
@@ -246,25 +246,21 @@ public class DBHelper extends SQLiteOpenHelper {
         return total;
     }
 
-    // Lấy danh sách các tháng có dữ liệu
     public List<String> getMonthsWithData() {
         List<String> months = new ArrayList<>();
         SQLiteDatabase db = this.getReadableDatabase();
-
         Cursor cursor = db.rawQuery("SELECT DISTINCT substr(date, 4, 7) as month FROM Infomations ORDER BY month DESC", null);
-
         if (cursor.moveToFirst()) {
             do {
                 months.add(cursor.getString(0));
             } while (cursor.moveToNext());
         }
-
         cursor.close();
         db.close();
         return months;
     }
 
-    // Chuyển đổi ngày thành timestamp
+    // Tiện ích: Chuyển đổi ngày thành timestamp
     public long convertDateToTimestamp(String dateStr) {
         try {
             SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
@@ -281,114 +277,111 @@ public class DBHelper extends SQLiteOpenHelper {
         }
     }
 
-    // PHƯƠNG THỨC ĐỂ PARSE GIÁ TIỀN TỪ CHUỖI
+    // Tiện ích: Parse giá tiền
     public int parsePriceFromString(String priceStr) {
-        if (priceStr == null || priceStr.trim().isEmpty()) {
-            return 0;
-        }
-
+        if (priceStr == null || priceStr.trim().isEmpty()) return 0;
         priceStr = priceStr.trim().toLowerCase();
-
         try {
-            // Loại bỏ tất cả ký tự không phải số, dấu chấm, dấu phẩy, k, tr
             priceStr = priceStr.replaceAll("[^0-9.ktr]", "");
-
             if (priceStr.endsWith("k")) {
-                // Xử lý đơn vị "k" (ngàn)
                 String numberPart = priceStr.substring(0, priceStr.length() - 1);
-                double value;
-
-                if (numberPart.contains(".")) {
-                    value = Double.parseDouble(numberPart);
-                } else {
-                    value = Integer.parseInt(numberPart);
-                }
-
-                return (int) (value * 1000);
-
+                return (int) (Double.parseDouble(numberPart) * 1000);
             } else if (priceStr.endsWith("tr")) {
-                // Xử lý đơn vị "tr" (triệu)
                 String numberPart = priceStr.substring(0, priceStr.length() - 2);
-                double value;
-
-                if (numberPart.contains(".")) {
-                    value = Double.parseDouble(numberPart);
-                } else {
-                    value = Integer.parseInt(numberPart);
-                }
-
-                return (int) (value * 1000000);
-
+                return (int) (Double.parseDouble(numberPart) * 1000000);
             } else {
-                // Chỉ có số, không có đơn vị
-                // Loại bỏ dấu chấm và dấu phẩy phân cách hàng nghìn
                 priceStr = priceStr.replace(".", "").replace(",", "");
                 return Integer.parseInt(priceStr);
             }
-
         } catch (NumberFormatException e) {
-            Log.e(TAG, "Error parsing price: " + priceStr + ", error: " + e.getMessage());
             return 0;
         }
     }
 
-    // DEBUG: Hiển thị tất cả dữ liệu trong database
-    public void debugAllData() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM Infomations", null);
-
-        Log.d(TAG, "=== DEBUG ALL DATA ===");
-        Log.d(TAG, "Total records: " + cursor.getCount());
-
-        if (cursor.moveToFirst()) {
-            do {
-                int id = cursor.getInt(0);
-                String title = cursor.getString(1);
-                String category = cursor.getString(2);
-                String date = cursor.getString(3);
-                long timestamp = cursor.getLong(4);
-                int price = cursor.getInt(5);
-                String type = cursor.getString(6);
-
-                Log.d(TAG, String.format("ID: %d, Category: %s, Price: %d, Type: %s, Date: %s",
-                        id, category, price, type, date));
-            } while (cursor.moveToNext());
+    // Phương thức chuẩn hóa tên danh mục: viết hoa chữ cái đầu mỗi từ
+    public static String capitalizeCategory(String category) {
+        if (category == null || category.isEmpty()) {
+            return category;
         }
 
-        Log.d(TAG, "=== END DEBUG ===");
+        // Loại bỏ khoảng trắng đầu/cuối
+        category = category.trim();
 
-        cursor.close();
-        db.close();
+        // Viết hoa chữ cái đầu, viết thường các chữ còn lại
+        return category.substring(0, 1).toUpperCase() +
+                category.substring(1).toLowerCase();
     }
 
-    // ========== CÁC PHƯƠNG THỨC CHO GHI CHÚ ==========
+    // ====================================================================
+    // PHẦN 2: CÁC PHƯƠNG THỨC CHO GHI CHÚ (NOTES) - TỪ FILE 2
+    // ====================================================================
 
-    // Thêm ghi chú
-    public void insertNote(Note note) {
+    public long addNote(Note note) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("content", note.getContent());
-        values.put("has_checkbox", note.hasCheckbox() ? 1 : 0);
+
+        values.put("content", note.getContent()); // Sửa lại tên cột theo đúng DB của bạn
+        values.put("is_checkbox", note.isCheckbox() ? 1 : 0);
         values.put("is_checked", note.isChecked() ? 1 : 0);
-        values.put("created_date", note.getCreatedDate());
-        db.insert("Notes", null, values);
+        values.put("is_group", note.isGroup() ? 1 : 0);
+        values.put("group_name", note.getGroupName());
+        values.put("group_id", note.getGroupId());
+        values.put("position", note.getPosition());
+
+        // Quan trọng: insert trả về ID của dòng mới, hoặc -1 nếu lỗi
+        long id = db.insert("notes", null, values); // Sửa "notes" thành tên bảng của bạn
         db.close();
+        return id;
     }
 
-    // Lấy tất cả ghi chú
+    public Note getNote(int id) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor cursor = db.query(TABLE_NOTES,
+                new String[]{COLUMN_ID, COLUMN_CONTENT, COLUMN_IS_CHECKBOX,
+                        COLUMN_IS_CHECKED, COLUMN_IS_GROUP, COLUMN_GROUP_NAME,
+                        COLUMN_GROUP_ID, COLUMN_POSITION},
+                COLUMN_ID + "=?",
+                new String[]{String.valueOf(id)}, null, null, null, null);
+
+        if (cursor != null)
+            cursor.moveToFirst();
+
+        Note note = new Note();
+        if (cursor != null && cursor.getCount() > 0) {
+            note.setId(cursor.getInt(0));
+            note.setContent(cursor.getString(1));
+            note.setCheckbox(cursor.getInt(2) == 1);
+            note.setChecked(cursor.getInt(3) == 1);
+            note.setGroup(cursor.getInt(4) == 1);
+            note.setGroupName(cursor.getString(5));
+            note.setGroupId(cursor.getInt(6));
+            note.setPosition(cursor.getInt(7));
+        }
+
+        if (cursor != null) cursor.close();
+        return note;
+    }
+
     public List<Note> getAllNotes() {
         List<Note> notes = new ArrayList<>();
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT * FROM Notes ORDER BY created_date DESC", null);
+        // Sắp xếp theo vị trí
+        String selectQuery = "SELECT * FROM " + TABLE_NOTES + " ORDER BY " + COLUMN_POSITION + " ASC";
+
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery(selectQuery, null);
 
         if (cursor.moveToFirst()) {
             do {
                 Note note = new Note();
                 note.setId(cursor.getInt(0));
                 note.setContent(cursor.getString(1));
-                note.setHasCheckbox(cursor.getInt(2) == 1);
+                note.setCheckbox(cursor.getInt(2) == 1);
                 note.setChecked(cursor.getInt(3) == 1);
-                note.setCreatedDate(cursor.getString(4));
+                note.setGroup(cursor.getInt(4) == 1);
+                note.setGroupName(cursor.getString(5));
+                note.setGroupId(cursor.getInt(6));
+                note.setPosition(cursor.getInt(7));
+
                 notes.add(note);
             } while (cursor.moveToNext());
         }
@@ -398,56 +391,51 @@ public class DBHelper extends SQLiteOpenHelper {
         return notes;
     }
 
-    // Cập nhật ghi chú
-    public void updateNote(Note note) {
+    public int updateNote(Note note) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("content", note.getContent());
-        values.put("has_checkbox", note.hasCheckbox() ? 1 : 0);
-        values.put("is_checked", note.isChecked() ? 1 : 0);
-        values.put("created_date", note.getCreatedDate());
 
-        db.update("Notes", values, "id = ?", new String[]{String.valueOf(note.getId())});
+        values.put(COLUMN_CONTENT, note.getContent());
+        values.put(COLUMN_IS_CHECKBOX, note.isCheckbox() ? 1 : 0);
+        values.put(COLUMN_IS_CHECKED, note.isChecked() ? 1 : 0);
+        values.put(COLUMN_IS_GROUP, note.isGroup() ? 1 : 0);
+        values.put(COLUMN_GROUP_NAME, note.getGroupName());
+        values.put(COLUMN_GROUP_ID, note.getGroupId());
+        values.put(COLUMN_POSITION, note.getPosition());
+
+        int rows = db.update(TABLE_NOTES, values, COLUMN_ID + " = ?",
+                new String[]{String.valueOf(note.getId())});
         db.close();
+        return rows;
     }
 
-    // Xóa ghi chú
     public void deleteNote(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
-        db.delete("Notes", "id = ?", new String[]{String.valueOf(id)});
+        db.delete(TABLE_NOTES, COLUMN_ID + " = ?",
+                new String[]{String.valueOf(id)});
         db.close();
     }
 
-    // Cập nhật trạng thái checkbox
-    public void updateNoteCheckStatus(int id, boolean isChecked) {
+    public void updateNotePosition(int id, int position) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues values = new ContentValues();
-        values.put("is_checked", isChecked ? 1 : 0);
-        db.update("Notes", values, "id = ?", new String[]{String.valueOf(id)});
+        values.put(COLUMN_POSITION, position);
+        db.update(TABLE_NOTES, values, COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
         db.close();
     }
 
-    // Trong DBHelper.java, thêm phương thức debug
-    public void debugInfomationData() {
+    public int getNextGroupId() {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor cursor = db.rawQuery("SELECT id, category, price, type FROM Infomations", null);
+        String query = "SELECT MAX(" + COLUMN_GROUP_ID + ") FROM " + TABLE_NOTES;
+        Cursor cursor = db.rawQuery(query, null);
 
-        System.out.println("=== DEBUG DATABASE ===");
-        if (cursor.moveToFirst()) {
-            do {
-                int id = cursor.getInt(0);
-                String category = cursor.getString(1);
-                int price = cursor.getInt(2);
-                String type = cursor.getString(3);
-                System.out.println("ID: " + id + ", Category: " + category + ", Price: " + price + ", Type: " + type);
-            } while (cursor.moveToNext());
+        int maxId = 0;
+        if (cursor.moveToFirst() && cursor.getInt(0) > 0) {
+            maxId = cursor.getInt(0);
         }
-        System.out.println("=== END DEBUG ===");
 
         cursor.close();
         db.close();
+        return maxId + 1;
     }
-
-
-
 }

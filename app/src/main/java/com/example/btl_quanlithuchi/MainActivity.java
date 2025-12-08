@@ -75,10 +75,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (currentNightMode == AppCompatDelegate.MODE_NIGHT_YES) {
             themeItem.setIcon(R.drawable.ic_sun);
-            themeItem.setTitle("Chế độ sáng");
         } else {
             themeItem.setIcon(R.drawable.ic_moon);
-            themeItem.setTitle("Chế độ tối");
         }
 
         return true;
@@ -102,10 +100,8 @@ public class MainActivity extends AppCompatActivity {
 
         if (currentNightMode == AppCompatDelegate.MODE_NIGHT_YES) {
             newNightMode = AppCompatDelegate.MODE_NIGHT_NO;
-            Toast.makeText(this, "Đã chuyển sang chế độ sáng", Toast.LENGTH_SHORT).show();
         } else {
             newNightMode = AppCompatDelegate.MODE_NIGHT_YES;
-            Toast.makeText(this, "Đã chuyển sang chế độ tối", Toast.LENGTH_SHORT).show();
         }
 
         // Lưu theme vào SharedPreferences
