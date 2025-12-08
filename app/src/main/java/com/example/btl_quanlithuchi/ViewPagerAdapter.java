@@ -14,7 +14,7 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
         switch (position) {
             case 1: return new Trangthu_Fragment();
             case 2: return new Trangchi_Fragment();
-            case 3: return new Trangbieudo_Fragment();
+            case 3: return new Trangnote_Fragment(); // Thay bằng trang ghi chú
             default: return new Trangchu_Fragment();
         }
     }
@@ -24,4 +24,3 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
         return 4;
     }
 }
-

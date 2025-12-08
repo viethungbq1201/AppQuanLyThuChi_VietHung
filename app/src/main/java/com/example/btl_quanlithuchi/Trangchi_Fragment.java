@@ -8,6 +8,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.icu.text.SimpleDateFormat;
 import android.os.Build;
 import android.os.Bundle;
@@ -30,6 +31,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.text.NumberFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -40,6 +42,9 @@ public class Trangchi_Fragment extends Fragment {
     private RecyclerView rc_view_3;
     private InfomationAdapter adapter;
     private DBHelper dbHelper;
+    private Spinner spinnerMonth;
+    private String currentMonthYear;
+    private TextView tvTotal;
 
     @Nullable
     @Override
@@ -56,15 +61,25 @@ public class Trangchi_Fragment extends Fragment {
         }
 
         dbHelper = new DBHelper(getContext());
+
+        // Lấy tháng hiện tại
+        currentMonthYear = new SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(new Date());
+
+        // Setup spinner tháng
+        spinnerMonth = view.findViewById(R.id.spinnerMonth);
+        setupMonthSpinner();
+
+        // Setup RecyclerView
         rc_view_3 = view.findViewById(R.id.rc_view_3);
         rc_view_3.setLayoutManager(new LinearLayoutManager(getContext()));
-        List<Infomation> list = dbHelper.getInfomationsByType("chi");
-        adapter = new InfomationAdapter(getContext(), list);
-        rc_view_3.setAdapter(adapter);
+
+        // TextView tổng
+        tvTotal = view.findViewById(R.id.tvTotal);
+
+        // Load dữ liệu tháng hiện tại
+        loadDataForMonth(currentMonthYear);
 
         FloatingActionButton fab = view.findViewById(R.id.add_wallet_entry_fab);
-
-
         fab.setOnClickListener(v -> {
             showAddEntryDialog();
         });
@@ -72,8 +87,54 @@ public class Trangchi_Fragment extends Fragment {
         return view;
     }
 
-    private void showAddEntryDialog() {
+    private void setupMonthSpinner() {
+        List<String> months = dbHelper.getMonthsWithData();
+        if (months.isEmpty()) {
+            months.add(currentMonthYear);
+        }
 
+        ArrayAdapter<String> monthAdapter = new ArrayAdapter<>(
+                getContext(),
+                android.R.layout.simple_spinner_item,
+                months
+        );
+        monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerMonth.setAdapter(monthAdapter);
+
+        // Chọn tháng hiện tại
+        int position = months.indexOf(currentMonthYear);
+        if (position >= 0) {
+            spinnerMonth.setSelection(position);
+        }
+
+        spinnerMonth.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedMonth = (String) parent.getItemAtPosition(position);
+                loadDataForMonth(selectedMonth);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
+    private void loadDataForMonth(String monthYear) {
+        List<Infomation> list = dbHelper.getInfomationsByMonth("chi", monthYear);
+        adapter = new InfomationAdapter(getContext(), list);
+        rc_view_3.setAdapter(adapter);
+
+        // Hiển thị tổng chi của tháng
+        if (tvTotal != null) {
+            int total = dbHelper.getTotalExpenseByMonth(monthYear);
+            NumberFormat formatter = NumberFormat.getInstance(Locale.US);
+            tvTotal.setText("Tổng chi tháng " + monthYear + ": " + formatter.format(total) + " Đ");
+            tvTotal.setTextColor(Color.parseColor("#F44336"));
+        }
+    }
+
+    private void showAddEntryDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         LayoutInflater inflater = getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_add, null);
@@ -123,13 +184,13 @@ public class Trangchi_Fragment extends Fragment {
 
                 if (!isSpinnerInitialized[0]) {
                     isSpinnerInitialized[0] = true;
-                    return; // ❌ Bỏ qua lần đầu khi dialog mở
+                    return;
                 }
-                if (position > 0) { // Bỏ dòng "Nhập loại tiền thu chi"
-                    editCategory.setText(options[position]); // Ghi luôn vào ô danh mục
-                    editPrice.setText((defaultPrices[position])); // Ghi giá mặc định
+                if (position > 0) {
+                    editCategory.setText(options[position]);
+                    editPrice.setText((defaultPrices[position]));
                 } else {
-                    editCategory.setText(""); // Reset nếu chọn dòng đầu
+                    editCategory.setText("");
                     editPrice.setText("");
                 }
                 editPrice.requestFocus();
@@ -143,7 +204,7 @@ public class Trangchi_Fragment extends Fragment {
         tvSelectedDate.setOnClickListener(v1 -> {
             DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(),
                     (view1, year, month, dayOfMonth) -> {
-                        calendar.set(year, month, dayOfMonth, hour, minute, second); // giữ nguyên giờ
+                        calendar.set(year, month, dayOfMonth, hour, minute, second);
                         selectedDateTime[0] = sdfFull.format(calendar.getTime());
                         tvSelectedDate.setText("Ngày: " + sdfFull.format(calendar.getTime()));
                     },
@@ -154,9 +215,7 @@ public class Trangchi_Fragment extends Fragment {
             datePickerDialog.show();
         });
 
-
         btnOk.setOnClickListener(v -> {
-
             DBHelper dbHelper = new DBHelper(getContext());
             Infomation inf = new Infomation();
 
@@ -180,12 +239,18 @@ public class Trangchi_Fragment extends Fragment {
                 inf.setTitle("");
                 inf.setCategory(category);
                 inf.setPrice(Integer.parseInt(price));
-                inf.setType("chi");  // "chi" nếu ở Trangchi
-                inf.setDate(selectedDateTime[0]);  // chứa cả ngày và giờ
+                inf.setType("chi");
+                inf.setDate(selectedDateTime[0]);
                 dbHelper.insertInfomation(inf);
 
                 List<Infomation> list = dbHelper.getInfomationsByType("chi");
-                this.adapter.setData(list); // sẽ tự sort vì setData đã có sort
+                this.adapter.setData(list);
+
+                // Cập nhật spinner tháng
+                String selectedMonth = (String) spinnerMonth.getSelectedItem();
+                if (selectedMonth != null) {
+                    loadDataForMonth(selectedMonth);
+                }
 
                 dialog.dismiss();
             }
@@ -201,7 +266,6 @@ public class Trangchi_Fragment extends Fragment {
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
     }
-
 
     private void sendNotification(String message) {
         NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
@@ -221,19 +285,16 @@ public class Trangchi_Fragment extends Fragment {
         notificationManager.notify(1, builder.build());
     }
 
-
-
-
-
     @Override
     public void onResume() {
         super.onResume();
 
         if (dbHelper != null && adapter != null) {
-            List<Infomation> updatedList = dbHelper.getInfomationsByType("chi");
-            adapter.setData(updatedList);
-
+            String selectedMonth = (String) spinnerMonth.getSelectedItem();
+            if (selectedMonth != null) {
+                List<Infomation> updatedList = dbHelper.getInfomationsByMonth("chi", selectedMonth);
+                adapter.setData(updatedList);
+            }
         }
     }
-
 }

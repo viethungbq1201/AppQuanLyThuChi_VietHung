@@ -3,12 +3,12 @@ package com.example.btl_quanlithuchi;
 import static android.text.TextUtils.isEmpty;
 
 import android.app.AlertDialog;
-
 import android.app.DatePickerDialog;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.icu.text.SimpleDateFormat;
 import android.os.Build;
 import android.os.Bundle;
@@ -24,7 +24,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-
 import androidx.core.app.NotificationCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -32,7 +31,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
+import java.text.NumberFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
@@ -43,6 +42,9 @@ public class Trangthu_Fragment extends Fragment {
     private RecyclerView rc_view_2;
     private InfomationAdapter adapter;
     private DBHelper dbHelper;
+    private Spinner spinnerMonth;
+    private String currentMonthYear;
+    private TextView tvTotal;
 
     @Nullable
     @Override
@@ -59,14 +61,25 @@ public class Trangthu_Fragment extends Fragment {
         }
 
         dbHelper = new DBHelper(getContext());
+
+        // Lấy tháng hiện tại
+        currentMonthYear = new SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(new Date());
+
+        // Setup spinner tháng
+        spinnerMonth = view.findViewById(R.id.spinnerMonth);
+        setupMonthSpinner();
+
+        // Setup RecyclerView
         rc_view_2 = view.findViewById(R.id.rc_view_2);
         rc_view_2.setLayoutManager(new LinearLayoutManager(getContext()));
-        List<Infomation> list = dbHelper.getInfomationsByType("thu");
-        adapter = new InfomationAdapter(getContext(), list);
-        rc_view_2.setAdapter(adapter);
+
+        // TextView tổng
+        tvTotal = view.findViewById(R.id.tvTotal);
+
+        // Load dữ liệu tháng hiện tại
+        loadDataForMonth(currentMonthYear);
 
         FloatingActionButton fab = view.findViewById(R.id.add_wallet_entry_fab);
-
         fab.setOnClickListener(v -> {
             showAddEntryDialog();
         });
@@ -74,8 +87,54 @@ public class Trangthu_Fragment extends Fragment {
         return view;
     }
 
-    private void showAddEntryDialog() {
+    private void setupMonthSpinner() {
+        List<String> months = dbHelper.getMonthsWithData();
+        if (months.isEmpty()) {
+            months.add(currentMonthYear);
+        }
 
+        ArrayAdapter<String> monthAdapter = new ArrayAdapter<>(
+                getContext(),
+                android.R.layout.simple_spinner_item,
+                months
+        );
+        monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerMonth.setAdapter(monthAdapter);
+
+        // Chọn tháng hiện tại
+        int position = months.indexOf(currentMonthYear);
+        if (position >= 0) {
+            spinnerMonth.setSelection(position);
+        }
+
+        spinnerMonth.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                String selectedMonth = (String) parent.getItemAtPosition(position);
+                loadDataForMonth(selectedMonth);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+    }
+
+    private void loadDataForMonth(String monthYear) {
+        List<Infomation> list = dbHelper.getInfomationsByMonth("thu", monthYear);
+        adapter = new InfomationAdapter(getContext(), list);
+        rc_view_2.setAdapter(adapter);
+
+        // Hiển thị tổng thu của tháng
+        if (tvTotal != null) {
+            int total = dbHelper.getTotalIncomeByMonth(monthYear);
+            NumberFormat formatter = NumberFormat.getInstance(Locale.US);
+            tvTotal.setText("Tổng thu tháng " + monthYear + ": " + formatter.format(total) + " Đ");
+            tvTotal.setTextColor(Color.parseColor("#4CAF50"));
+        }
+    }
+
+    private void showAddEntryDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
         LayoutInflater inflater = getLayoutInflater();
         View view = inflater.inflate(R.layout.dialog_add, null);
@@ -124,14 +183,14 @@ public class Trangthu_Fragment extends Fragment {
                 EditText editPrice = view.findViewById(R.id.edit_price);
                 if (!isSpinnerInitialized[0]) {
                     isSpinnerInitialized[0] = true;
-                    return; // ❌ Bỏ qua lần đầu khi dialog mở
+                    return;
                 }
 
-                if (position > 0) { // Bỏ dòng "Nhập loại tiền thu chi"
-                    editCategory.setText(options[position]); // Ghi luôn vào ô danh mục
-                    editPrice.setText((defaultPrices[position])); // Ghi giá mặc định
+                if (position > 0) {
+                    editCategory.setText(options[position]);
+                    editPrice.setText((defaultPrices[position]));
                 } else {
-                    editCategory.setText(""); // Reset nếu chọn dòng đầu
+                    editCategory.setText("");
                     editPrice.setText("");
                 }
                 editPrice.requestFocus();
@@ -145,7 +204,7 @@ public class Trangthu_Fragment extends Fragment {
         tvSelectedDate.setOnClickListener(v1 -> {
             DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(),
                     (view1, year, month, dayOfMonth) -> {
-                        calendar.set(year, month, dayOfMonth, hour, minute, second); // giữ nguyên giờ
+                        calendar.set(year, month, dayOfMonth, hour, minute, second);
                         selectedDateTime[0] = sdfFull.format(calendar.getTime());
                         tvSelectedDate.setText("Ngày: " + sdfFull.format(calendar.getTime()));
                     },
@@ -157,7 +216,6 @@ public class Trangthu_Fragment extends Fragment {
         });
 
         btnOk.setOnClickListener(v -> {
-
             DBHelper dbHelper = new DBHelper(getContext());
             Infomation inf = new Infomation();
 
@@ -182,14 +240,18 @@ public class Trangthu_Fragment extends Fragment {
                 inf.setTitle("");
                 inf.setCategory(category);
                 inf.setPrice(Integer.parseInt(price));
-                inf.setType("thu");  // "chi" nếu ở Trangchi
-                inf.setDate(selectedDateTime[0]);  // chứa cả ngày và giờ
+                inf.setType("thu");
+                inf.setDate(selectedDateTime[0]);
                 dbHelper.insertInfomation(inf);
 
-
                 List<Infomation> list = dbHelper.getInfomationsByType("thu");
-                this.adapter.setData(list); // sẽ tự sort vì setData đã có sort
+                this.adapter.setData(list);
 
+                // Cập nhật spinner tháng
+                String selectedMonth = (String) spinnerMonth.getSelectedItem();
+                if (selectedMonth != null) {
+                    loadDataForMonth(selectedMonth);
+                }
 
                 dialog.dismiss();
             }
@@ -204,7 +266,7 @@ public class Trangthu_Fragment extends Fragment {
         });
 
         btnCancel.setOnClickListener(v -> dialog.dismiss());
-    };
+    }
 
     private void sendNotification(String message) {
         NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
@@ -229,10 +291,11 @@ public class Trangthu_Fragment extends Fragment {
         super.onResume();
 
         if (dbHelper != null && adapter != null) {
-            List<Infomation> updatedList = dbHelper.getInfomationsByType("thu");
-            adapter.setData(updatedList);
+            String selectedMonth = (String) spinnerMonth.getSelectedItem();
+            if (selectedMonth != null) {
+                List<Infomation> updatedList = dbHelper.getInfomationsByMonth("thu", selectedMonth);
+                adapter.setData(updatedList);
+            }
         }
     }
-
-
 }
