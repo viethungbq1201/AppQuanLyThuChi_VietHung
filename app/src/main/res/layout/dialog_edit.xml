@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:orientation="vertical"
-    android:background="#FFFFFF"
+    android:background="@color/dialog_background"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:padding="16dp"
@@ -13,86 +13,76 @@
         android:layout_height="wrap_content"
         android:gravity="center"
         android:text="SỬA THU"
-        android:textColor="#64B5F6"
+        android:textColor="@color/dialog_title"
         android:textStyle="bold"
         android:textSize="20sp"
-        android:paddingBottom="16dp" />
+        android:paddingBottom="8dp" />
 
     <TextView
         android:id="@+id/tv_selected_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Ngày: 01/01/2023 10:00:00"
+        android:text="Ngày: Hôm nay"
         android:padding="12dp"
         android:textSize="16sp"
-        android:background="#E3F2FD"
-        android:textColor="#000000"
+        android:background="@color/color_primary_light"
+        android:textColor="@color/text_primary"
         android:gravity="center"
         android:clickable="true"
-        android:focusable="true"
-        android:layout_marginBottom="8dp"/>
-
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="(Nhấn để chọn ngày và giờ)"
-        android:textSize="12sp"
-        android:textColor="#757575"
-        android:gravity="center"
-        android:layout_marginBottom="16dp"/>
+        android:focusable="true"/>
 
     <Spinner
         android:id="@+id/spinner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp" />
+        android:layout_marginTop="16dp" />
 
     <EditText
         android:id="@+id/edit_category"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Danh mục"
-        android:inputType="text"
-        android:layout_marginBottom="16dp"
+        android:inputType="textPersonName"
+        android:textColorHint="@color/text_hint"
+        android:textColor="@color/text_primary"
+        android:layout_marginTop="16dp"
         android:padding="12dp"
-        android:background="#F5F5F5" />
+        android:background="@color/background_grey" />
 
     <EditText
         android:id="@+id/edit_price"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Giá tiền"
-        android:inputType="numberDecimal|text"
+        android:layout_marginTop="10dp"
+        android:hint="Giá tiền (vd: 10000, 10k, 0.5tr)"
+        android:textColorHint="@color/text_hint"
+        android:textColor="@color/text_primary"
+        android:inputType="text"
         android:padding="12dp"
-        android:background="#F5F5F5" />
+        android:background="@color/background_grey" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="end"
-        android:layout_marginTop="24dp">
+        android:layout_marginTop="16dp">
 
         <Button
             android:id="@+id/btn_cancel"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Hủy"
-            android:backgroundTint="#757575"
-            android:textColor="#FFFFFF"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp" />
+            android:text="Đóng"
+            android:textColor="@color/button_text"
+            android:backgroundTint="@color/button_secondary" />
 
         <Button
             android:id="@+id/btn_ok"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Lưu"
-            android:backgroundTint="#64B5F6"
-            android:textColor="#FFFFFF"
-            android:layout_marginStart="8dp"
-            android:paddingStart="24dp"
-            android:paddingEnd="24dp" />
-
+            android:text="OK"
+            android:textColor="@color/button_text"
+            android:backgroundTint="@color/button_primary"
+            android:layout_marginStart="8dp" />
     </LinearLayout>
 </LinearLayout>

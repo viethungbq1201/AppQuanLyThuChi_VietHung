@@ -1,7 +1,72 @@
-<resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Theme -->
     <style name="Base.Theme.BTL_QuanLiThuChi" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/color_primary</item>
+        <item name="colorPrimaryDark">@color/background_light</item>
+        <item name="colorAccent">@color/color_primary</item>
+        <item name="android:windowBackground">@color/background_grey</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="android:statusBarColor">@color/background_light</item>
+
+        <!-- Thêm theme cho Toolbar -->
+        <item name="actionBarStyle">@style/MyActionBarDark</item>
+
+        <!-- Thêm theme cho TabLayout -->
+        <item name="tabStyle">@style/MyTabLayout</item>
+        <item name="tabIndicatorColor">@color/tab_indicator</item>
+        <item name="tabTextColor">@color/tab_unselected_text</item>
+        <item name="tabSelectedTextColor">@color/tab_selected_text</item>
     </style>
+
+    <!-- Custom ActionBar style for Dark theme -->
+    <style name="MyActionBarDark" parent="Widget.AppCompat.ActionBar.Solid">
+        <item name="background">@color/color_primary</item>
+        <item name="titleTextStyle">@style/MyActionBarTitleDark</item>
+        <item name="height">56dp</item>
+    </style>
+
+    <!-- ActionBar title style for Dark theme -->
+    <style name="MyActionBarTitleDark" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <!-- TabLayout style -->
+    <style name="MyTabLayout" parent="Widget.Design.TabLayout">
+        <item name="tabIndicatorColor">@color/tab_indicator</item>
+        <item name="tabTextColor">@color/tab_unselected_text</item>
+        <item name="tabSelectedTextColor">@color/tab_selected_text</item>
+        <item name="android:background">@color/tab_background</item>
+        <item name="tabMaxWidth">@dimen/tab_max_width</item>
+        <item name="tabPaddingStart">12dp</item>
+        <item name="tabPaddingEnd">12dp</item>
+    </style>
+
+    <!-- Tab text appearance for Dark theme -->
+    <style name="MyTabTextAppearance" parent="TextAppearance.Design.Tab">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <!-- Selected tab text appearance for Dark theme -->
+    <style name="MyTabSelectedTextAppearance" parent="TextAppearance.Design.Tab">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+
+    <!-- Theme overlay for dark ActionBar -->
+    <style name="ThemeOverlay.AppCompat.Dark.ActionBar" parent="ThemeOverlay.AppCompat.Dark">
+        <item name="android:textColorPrimary">@android:color/white</item>
+    </style>
+
+    <style name="Theme.BTL_QuanLiThuChi" parent="Base.Theme.BTL_QuanLiThuChi" />
+
 </resources>

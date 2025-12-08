@@ -18,6 +18,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.text.DecimalFormat;
@@ -100,15 +101,11 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
         return R.drawable.ic_money;
     }
 
+    // Thay đổi trong phương thức onBindViewHolder:
+
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         Infomation t = list.get(position);
-
-        // DEBUG: Kiểm tra giá trị
-        if (t.getPrice() == 0) {
-            // Nếu giá trị là 0, có thể do lỗi parse
-            System.out.println("DEBUG: Item at position " + position + " has price = 0");
-        }
 
         // Sử dụng DecimalFormat thay vì NumberFormat
         DecimalFormat formatter = new DecimalFormat("#,###");
@@ -125,31 +122,20 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
         }
         holder.date.setText(displayDate);
 
+        // Lấy màu từ resources theo theme
+        Context context = holder.itemView.getContext();
+        int incomeColor = ContextCompat.getColor(context, R.color.color_income);
+        int expenseColor = ContextCompat.getColor(context, R.color.color_expense);
+
         // Hiển thị số tiền
         if (t.getType().equalsIgnoreCase("thu")) {
             holder.price.setText("+ " + formattedPrice + " đ");
-            holder.price.setTextColor(Color.parseColor("#4CAF50"));
+            holder.price.setTextColor(incomeColor);
         } else {
             holder.price.setText("- " + formattedPrice + " đ");
-            holder.price.setTextColor(Color.parseColor("#F44336"));
+            holder.price.setTextColor(expenseColor);
         }
 
-        // Click để sửa
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showEditDialog(t, holder.getAdapterPosition());
-            }
-        });
-
-        // Long click để xóa
-        holder.itemView.setOnLongClickListener(new View.OnLongClickListener() {
-            @Override
-            public boolean onLongClick(View v) {
-                showDeleteDialog(t, holder.getAdapterPosition());
-                return true;
-            }
-        });
     }
 
     @Override

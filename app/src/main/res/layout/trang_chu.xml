@@ -5,7 +5,7 @@
     android:id="@+id/home_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#FFFFFF"
+    android:background="@color/background_grey"
     android:orientation="vertical">
 
     <LinearLayout
@@ -13,14 +13,13 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:padding="16dp"
-        android:background="#64B5F6">
+        android:background="@color/background_card">
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Lọc theo:"
-            android:textColor="#FFFFFF"
+            android:text="Chọn tháng:"
             android:textSize="16sp"
             android:gravity="center_vertical" />
 
@@ -29,7 +28,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="2"
-            android:backgroundTint="#FFFFFF" />
+            android:backgroundTint="@color/text_white" />
 
     </LinearLayout>
 
@@ -48,10 +47,10 @@
         android:layout_gravity="center_horizontal"
         android:layout_margin="16dp"
         android:text="Số dư hiện tại: 0 VND"
-        android:textColor="#000000"
+        android:textColor="@color/text_primary"
         android:textSize="20sp"
         android:textStyle="bold"
-        android:background="#E3F2FD"
+        android:background="@color/color_primary_light"
         android:padding="16dp" />
 
     <TextView
@@ -60,7 +59,7 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginBottom="8dp"
         android:text="Giao dịch gần đây"
-        android:textColor="#64B5F6"
+        android:textColor="@color/color_primary"
         android:textSize="18sp"
         android:textStyle="bold" />
 
@@ -68,6 +67,7 @@
         android:id="@+id/rc_view_1"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="8dp" />
+        android:padding="8dp"
+        android:clipToPadding="false" />
 
 </LinearLayout>

@@ -11,6 +11,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -21,6 +22,7 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -65,9 +67,6 @@ public class Trangchu_Fragment extends Fragment {
 
         // Load dữ liệu tất cả các giao dịch
         loadAllData();
-
-        // DEBUG: Kiểm tra dữ liệu
-        dbHelper.debugInfomationData();
 
         return view;
     }
@@ -118,9 +117,18 @@ public class Trangchu_Fragment extends Fragment {
         int totalExpense = dbHelper.getTotalExpense();
         int balance = totalIncome - totalExpense;
 
-        NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
-        txtBalance.setText("Số dư hiện tại: " + numberFormat.format(balance) + " VND");
-        txtBalance.setTextColor(balance >= 0 ? Color.parseColor("#4CAF50") : Color.parseColor("#F44336"));
+        DecimalFormat numberFormat = new DecimalFormat("#,###");
+
+        // Lấy màu từ resource dựa trên theme
+        int balanceColor;
+        if (balance >= 0) {
+            balanceColor = ContextCompat.getColor(getContext(), R.color.color_income);
+        } else {
+            balanceColor = ContextCompat.getColor(getContext(), R.color.color_expense);
+        }
+
+        txtBalance.setText("Số dư: " + numberFormat.format(balance) + " đ");
+        txtBalance.setTextColor(balanceColor);
     }
 
     private void loadAllData() {
@@ -139,9 +147,18 @@ public class Trangchu_Fragment extends Fragment {
         int expense = dbHelper.getTotalExpenseByMonth(monthYear);
         int balance = income - expense;
 
-        NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
-        txtBalance.setText("Số dư tháng " + monthYear + ": " + numberFormat.format(balance) + " VND");
-        txtBalance.setTextColor(balance >= 0 ? Color.parseColor("#4CAF50") : Color.parseColor("#F44336"));
+        DecimalFormat numberFormat = new DecimalFormat("#,###");
+
+        // Lấy màu từ resource dựa trên theme
+        int balanceColor;
+        if (balance >= 0) {
+            balanceColor = ContextCompat.getColor(getContext(), R.color.color_income);
+        } else {
+            balanceColor = ContextCompat.getColor(getContext(), R.color.color_expense);
+        }
+
+        txtBalance.setText("Tháng " + monthYear + ": " + numberFormat.format(balance) + " đ");
+        txtBalance.setTextColor(balanceColor);
 
         // Load biểu đồ cho tháng
         loadPieChartForMonth(monthYear);
@@ -158,28 +175,67 @@ public class Trangchu_Fragment extends Fragment {
         if (entries.isEmpty()) {
             pieChart.clear();
             pieChart.setNoDataText("Không có dữ liệu");
-            pieChart.setNoDataTextColor(Color.GRAY);
+            pieChart.setNoDataTextColor(ContextCompat.getColor(getContext(), R.color.text_secondary));
             return;
         }
 
         PieDataSet dataSet = new PieDataSet(entries, "");
-        dataSet.setColors(Color.parseColor("#4CAF50"), Color.parseColor("#F44336"));
-        dataSet.setValueTextColor(Color.BLACK);
+
+        // Lấy màu từ resources
+        int incomeColor = ContextCompat.getColor(getContext(), R.color.chart_income);
+        int expenseColor = ContextCompat.getColor(getContext(), R.color.chart_expense);
+        int textColor = ContextCompat.getColor(getContext(), R.color.chart_text);
+        int holeColor = ContextCompat.getColor(getContext(), R.color.chart_hole);
+        int transparentCircleColor = ContextCompat.getColor(getContext(), R.color.chart_transparent_circle);
+
+        dataSet.setColors(incomeColor, expenseColor);
+        dataSet.setValueTextColor(textColor);
         dataSet.setValueTextSize(14f);
 
         PieData pieData = new PieData(dataSet);
         pieChart.setData(pieData);
 
+        // Cấu hình biểu đồ - ÁP DỤNG CHO CẢ HAI THEME
+//        pieChart.setDrawHoleEnabled(true);
+//        pieChart.setHoleRadius(60f);
+//        pieChart.setTransparentCircleRadius(65f);
+//        pieChart.setHoleColor(holeColor); // Màu trắng cho lỗ tròn
+//        pieChart.setTransparentCircleColor(transparentCircleColor); // Vòng trong mờ
+//
+//        pieChart.setCenterText("🟢 Tổng thu\n🔴 Tổng chi");
+//        pieChart.setCenterTextSize(14f);
+//        pieChart.setCenterTextColor(textColor);
+
+// 1. Làm trong suốt phần lỗ tròn và vòng mờ để hoà với màu nền ứng dụng
         pieChart.setDrawHoleEnabled(true);
-        pieChart.setHoleRadius(60f);
-        pieChart.setTransparentCircleRadius(65f);
-        pieChart.setCenterText("🟢 Tổng thu\n🔴 Tổng chi");
-        pieChart.setCenterTextSize(14f);
-        pieChart.setCenterTextColor(Color.BLACK);
+        pieChart.setHoleColor(Color.TRANSPARENT); // QUAN TRỌNG: Đặt màu trong suốt
+        pieChart.setTransparentCircleColor(Color.TRANSPARENT); // Đặt vòng mờ cũng trong suốt luôn
+
+// 2. Xoá nội dung bên trong
+        pieChart.setCenterText(""); // Để chuỗi rỗng
+        pieChart.setDrawCenterText(false); // Hoặc tắt tính năng vẽ chữ ở giữa
+
+// 3. Tắt Description (nếu chưa tắt)
+        pieChart.getDescription().setEnabled(false);
         pieChart.getDescription().setEnabled(false);
 
+        // Cấu hình legend
         Legend legend = pieChart.getLegend();
-        legend.setEnabled(false);
+        legend.setEnabled(true);
+        legend.setTextColor(textColor);
+        legend.setTextSize(12f);
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        legend.setDrawInside(false);
+        legend.setXEntrySpace(7f);
+        legend.setYEntrySpace(0f);
+        legend.setYOffset(0f);
+
+        // Tắt các hiệu ứng không cần thiết
+        pieChart.setDrawEntryLabels(false);
+//        pieChart.setRotationEnabled(false);
+//        pieChart.setHighlightPerTapEnabled(false);
 
         pieChart.invalidate();
     }
@@ -195,28 +251,52 @@ public class Trangchu_Fragment extends Fragment {
         if (entries.isEmpty()) {
             pieChart.clear();
             pieChart.setNoDataText("Không có dữ liệu tháng này");
-            pieChart.setNoDataTextColor(Color.GRAY);
+            pieChart.setNoDataTextColor(ContextCompat.getColor(getContext(), R.color.text_secondary));
             return;
         }
 
         PieDataSet dataSet = new PieDataSet(entries, "");
-        dataSet.setColors(Color.parseColor("#4CAF50"), Color.parseColor("#F44336"));
-        dataSet.setValueTextColor(Color.BLACK);
+
+        // Lấy màu từ resources
+        int incomeColor = ContextCompat.getColor(getContext(), R.color.chart_income);
+        int expenseColor = ContextCompat.getColor(getContext(), R.color.chart_expense);
+        int textColor = ContextCompat.getColor(getContext(), R.color.chart_text);
+        int holeColor = ContextCompat.getColor(getContext(), R.color.chart_hole);
+        int transparentCircleColor = ContextCompat.getColor(getContext(), R.color.chart_transparent_circle);
+
+        dataSet.setColors(incomeColor, expenseColor);
+        dataSet.setValueTextColor(textColor);
         dataSet.setValueTextSize(14f);
 
         PieData pieData = new PieData(dataSet);
         pieChart.setData(pieData);
 
+        // Cấu hình biểu đồ
         pieChart.setDrawHoleEnabled(true);
         pieChart.setHoleRadius(60f);
         pieChart.setTransparentCircleRadius(65f);
-        pieChart.setCenterText("🟢 Thu tháng\n🔴 Chi tháng\n" + monthYear);
+        pieChart.setHoleColor(holeColor); // Màu trắng cho lỗ tròn
+        pieChart.setTransparentCircleColor(transparentCircleColor); // Vòng trong mờ
+
+        pieChart.setCenterText("Tháng " + monthYear + "\n🟢 Thu\n🔴 Chi");
         pieChart.setCenterTextSize(12f);
-        pieChart.setCenterTextColor(Color.BLACK);
+        pieChart.setCenterTextColor(textColor);
         pieChart.getDescription().setEnabled(false);
 
+        // Cấu hình legend
         Legend legend = pieChart.getLegend();
-        legend.setEnabled(false);
+        legend.setEnabled(true);
+        legend.setTextColor(textColor);
+        legend.setTextSize(12f);
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
+        legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        legend.setDrawInside(false);
+
+        // Tắt các hiệu ứng không cần thiết
+        pieChart.setDrawEntryLabels(false);
+        pieChart.setRotationEnabled(false);
+        pieChart.setHighlightPerTapEnabled(false);
 
         pieChart.invalidate();
     }

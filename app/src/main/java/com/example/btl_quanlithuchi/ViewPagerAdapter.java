@@ -12,9 +12,10 @@ public class ViewPagerAdapter extends FragmentStateAdapter {
     @Override
     public Fragment createFragment(int position) {
         switch (position) {
-            case 1: return new Trangthu_Fragment();
-            case 2: return new Trangchi_Fragment();
-            case 3: return new Trangnote_Fragment(); // Thay bằng trang ghi chú
+            case 0: return new Trangchu_Fragment();    // Home
+            case 1: return new Trangthu_Fragment();    // Income
+            case 2: return new Trangchi_Fragment();    // Expense
+            case 3: return new Trangnote_Fragment();   // Note
             default: return new Trangchu_Fragment();
         }
     }

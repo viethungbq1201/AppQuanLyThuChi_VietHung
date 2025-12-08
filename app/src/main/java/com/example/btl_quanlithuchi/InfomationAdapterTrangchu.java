@@ -8,6 +8,7 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.text.DecimalFormat;
@@ -80,6 +81,8 @@ public class InfomationAdapterTrangchu extends RecyclerView.Adapter<InfomationAd
         return R.drawable.ic_money;
     }
 
+    // Thay đổi trong phương thức onBindViewHolder:
+
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         Infomation t = list.get(position);
@@ -99,14 +102,20 @@ public class InfomationAdapterTrangchu extends RecyclerView.Adapter<InfomationAd
         }
         holder.date.setText(displayDate);
 
+        // Lấy màu từ resources theo theme
+        Context context = holder.itemView.getContext();
+        int incomeColor = ContextCompat.getColor(context, R.color.color_income);
+        int expenseColor = ContextCompat.getColor(context, R.color.color_expense);
+
         // Hiển thị số tiền
         if (t.getType().equalsIgnoreCase("thu")) {
             holder.price.setText("+ " + formattedPrice + " đ");
-            holder.price.setTextColor(Color.parseColor("#4CAF50"));
+            holder.price.setTextColor(incomeColor);
         } else {
             holder.price.setText("- " + formattedPrice + " đ");
-            holder.price.setTextColor(Color.parseColor("#F44336"));
+            holder.price.setTextColor(expenseColor);
         }
+
     }
 
     @Override
