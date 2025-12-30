@@ -136,6 +136,17 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
             holder.price.setTextColor(expenseColor);
         }
 
+        // ✅ CLICK → SỬA
+        holder.itemView.setOnClickListener(v -> {
+            showEditDialog(t, holder.getAdapterPosition());
+        });
+
+        // ✅ LONG CLICK → XOÁ
+        holder.itemView.setOnLongClickListener(v -> {
+            showDeleteDialog(t, holder.getAdapterPosition());
+            return true;
+        });
+
     }
 
     @Override
@@ -171,7 +182,7 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
 
         // Khởi tạo spinner
         String[] options = info.getType().equalsIgnoreCase("thu") ?
-                new String[]{"Nhập loại tiền thu chi", "Lương", "Bố mẹ", "C Trang", "Nạp điện thoại"} :
+                new String[]{"Nhập loại tiền thu chi", "Lương", "Bố mẹ", "C Trang"} :
                 new String[]{"Nhập loại tiền thu chi", "Gửi xe 1", "Gửi xe 2", "Gửi xe 3", "Xăng", "Nạp điện thoại", "Xe Thái Bình"};
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, options);

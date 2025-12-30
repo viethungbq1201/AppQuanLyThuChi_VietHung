@@ -12,300 +12,163 @@ import android.graphics.Color;
 import android.icu.text.SimpleDateFormat;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Spinner;
-import android.widget.TextView;
-import android.widget.Toast;
-
+import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
-
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import java.text.DecimalFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 public class Trangthu_Fragment extends Fragment {
 
-    private RecyclerView rc_view_2;
+    private RecyclerView recyclerView;
     private InfomationAdapter adapter;
     private DBHelper dbHelper;
     private Spinner spinnerMonth;
-    private String currentMonthYear;
     private TextView tvTotal;
-    private static final String TAG = "Trangthu_Fragment";
+    private String currentMonth;
 
     @Nullable
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
-
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.trang_thu, container, false);
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (requireContext().checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
-                    != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1001);
-            }
-        }
-
+        requestNotificationPermission();
         dbHelper = new DBHelper(getContext());
+        currentMonth = new SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(new Date());
 
+        recyclerView = view.findViewById(R.id.rc_view_2);
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        // Lấy tháng hiện tại
-        currentMonthYear = new SimpleDateFormat("MM/yyyy", Locale.getDefault()).format(new Date());
-
-        // Setup spinner tháng
         spinnerMonth = view.findViewById(R.id.spinnerMonth);
-        setupMonthSpinner();
-
-        // Setup RecyclerView
-        rc_view_2 = view.findViewById(R.id.rc_view_2);
-        rc_view_2.setLayoutManager(new LinearLayoutManager(getContext()));
-
-        // TextView tổng
         tvTotal = view.findViewById(R.id.tvTotal);
 
-        // Load dữ liệu tháng hiện tại
-        loadDataForMonth(currentMonthYear);
+        setupMonthSpinner();
+        loadDataForMonth(currentMonth);
 
         FloatingActionButton fab = view.findViewById(R.id.add_wallet_entry_fab);
-        fab.setOnClickListener(v -> {
-            showAddEntryDialog();
-        });
+        fab.setOnClickListener(v -> showAddEntryDialog());
 
         return view;
     }
 
     private void setupMonthSpinner() {
         List<String> months = dbHelper.getMonthsWithData();
-        if (months.isEmpty()) {
-            months.add(currentMonthYear);
-        }
+        if (months.isEmpty()) months.add(currentMonth);
 
-        ArrayAdapter<String> monthAdapter = new ArrayAdapter<>(
-                getContext(),
-                android.R.layout.simple_spinner_item,
-                months
-        );
-        monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinnerMonth.setAdapter(monthAdapter);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_item, months);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerMonth.setAdapter(adapter);
 
-        // Chọn tháng hiện tại
-        int position = months.indexOf(currentMonthYear);
-        if (position >= 0) {
-            spinnerMonth.setSelection(position);
-        }
+        spinnerMonth.setSelection(months.indexOf(currentMonth));
 
         spinnerMonth.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                String selectedMonth = (String) parent.getItemAtPosition(position);
-                loadDataForMonth(selectedMonth);
+                loadDataForMonth(parent.getItemAtPosition(position).toString());
             }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
         });
     }
 
-    private void loadDataForMonth(String monthYear) {
-        List<Infomation> list = dbHelper.getInfomationsByMonth("thu", monthYear);
+    private void loadDataForMonth(String month) {
+        List<Infomation> list = dbHelper.getInfomationsByMonth("thu", month);
         adapter = new InfomationAdapter(getContext(), list);
-        rc_view_2.setAdapter(adapter);
+        recyclerView.setAdapter(adapter);
 
-        // Hiển thị tổng thu của tháng
-        if (tvTotal != null) {
-            int total = dbHelper.getTotalIncomeByMonth(monthYear);
-            DecimalFormat formatter = new DecimalFormat("#,###");
-            tvTotal.setText("Tổng thu tháng " + monthYear + ": " + formatter.format(total) + " đ");
-            tvTotal.setTextColor(Color.parseColor("#4CAF50"));
-        }
+        int total = dbHelper.getTotalIncomeByMonth(month);
+        tvTotal.setText("Tổng thu tháng " + month + ": " +
+                new DecimalFormat("#,###").format(total) + " đ");
+        tvTotal.setTextColor(Color.parseColor("#4CAF50"));
     }
 
     private void showAddEntryDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        LayoutInflater inflater = getLayoutInflater();
-        View view = inflater.inflate(R.layout.dialog_add, null);
-        builder.setView(view);
-
-        AlertDialog dialog = builder.create();
-        dialog.getWindow().setBackgroundDrawableResource(android.R.color.transparent);
+        View view = LayoutInflater.from(getContext()).inflate(R.layout.dialog_add, null);
+        AlertDialog dialog = new AlertDialog.Builder(getContext()).setView(view).create();
         dialog.show();
 
-        Button btnOk = view.findViewById(R.id.btn_ok);
-        Button btnCancel = view.findViewById(R.id.btn_cancel);
+        EditText edtCategory = view.findViewById(R.id.edit_category);
+        EditText edtPrice = view.findViewById(R.id.edit_price);
+        TextView tvDate = view.findViewById(R.id.tv_selected_date);
 
-        Spinner spinner = view.findViewById(R.id.spinner);
-        String[] options = {"Nhập loại tiền thu chi", "Lương", "Bố mẹ", "C Trang", "Nạp điện thoại"};
-        String[] defaultPrices = {"", "", "", "", "50k"};
+        Calendar cal = Calendar.getInstance();
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
+        tvDate.setText("Ngày: " + sdf.format(cal.getTime()));
+        final String[] selectedDate = { sdf.format(cal.getTime()) };
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_item, options);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(adapter);
+        tvDate.setOnClickListener(v ->
+                new DatePickerDialog(getContext(),
+                        (d, y, m, day) -> {
+                            cal.set(y, m, day);
+                            selectedDate[0] = sdf.format(cal.getTime());
+                            tvDate.setText("Ngày: " + selectedDate[0]);
+                        },
+                        cal.get(Calendar.YEAR),
+                        cal.get(Calendar.MONTH),
+                        cal.get(Calendar.DAY_OF_MONTH)).show()
+        );
 
-        TextView tvSelectedDate = view.findViewById(R.id.tv_selected_date);
+        view.findViewById(R.id.btn_ok).setOnClickListener(v -> {
+            String category = DBHelper.capitalizeCategory(edtCategory.getText().toString());
+            String priceInput = edtPrice.getText().toString();
 
-        Calendar calendar = Calendar.getInstance();
-        SimpleDateFormat sdfFull = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault());
-        SimpleDateFormat sdfDateOnly = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
-
-        int hour = calendar.get(Calendar.HOUR_OF_DAY);
-        int minute = calendar.get(Calendar.MINUTE);
-        int second = calendar.get(Calendar.SECOND);
-
-        String currentDate = sdfDateOnly.format(calendar.getTime());
-        String currentDateTime = sdfFull.format(calendar.getTime());
-        tvSelectedDate.setText("Ngày: " + currentDateTime);
-
-        final String[] selectedDateTime = { currentDateTime };
-
-        EditText editCategory = view.findViewById(R.id.edit_category);
-        EditText editPrice = view.findViewById(R.id.edit_price);
-        editCategory.requestFocus();
-
-        final boolean[] isSpinnerInitialized = {false};
-
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View v1, int position, long id) {
-                EditText editCategory = view.findViewById(R.id.edit_category);
-                EditText editPrice = view.findViewById(R.id.edit_price);
-                if (!isSpinnerInitialized[0]) {
-                    isSpinnerInitialized[0] = true;
-                    return;
-                }
-
-                if (position > 0) {
-                    editCategory.setText(options[position]);
-                    editPrice.setText(defaultPrices[position]);
-                } else {
-                    editCategory.setText("");
-                    editPrice.setText("");
-                }
-                editPrice.requestFocus();
-                editPrice.setSelection(editPrice.getText().length());
-            }
-
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {}
-        });
-
-        tvSelectedDate.setOnClickListener(v1 -> {
-            DatePickerDialog datePickerDialog = new DatePickerDialog(getContext(),
-                    (view1, year, month, dayOfMonth) -> {
-                        calendar.set(year, month, dayOfMonth, hour, minute, second);
-                        selectedDateTime[0] = sdfFull.format(calendar.getTime());
-                        tvSelectedDate.setText("Ngày: " + sdfFull.format(calendar.getTime()));
-                    },
-                    calendar.get(Calendar.YEAR),
-                    calendar.get(Calendar.MONTH),
-                    calendar.get(Calendar.DAY_OF_MONTH)
-            );
-            datePickerDialog.show();
-        });
-
-        btnOk.setOnClickListener(v -> {
-            DBHelper dbHelper = new DBHelper(getContext());
-            Infomation inf = new Infomation();
-
-            String category = editCategory.getText().toString();
-            category = DBHelper.capitalizeCategory(category);
-
-            String priceInput = editPrice.getText().toString();
-
-            if (isEmpty(category)) {
-                Toast.makeText(getContext(), "Vui lòng nhập danh mục!", Toast.LENGTH_SHORT).show();
+            if (isEmpty(category) || isEmpty(priceInput)) {
+                Toast.makeText(getContext(), "Vui lòng nhập đầy đủ!", Toast.LENGTH_SHORT).show();
                 return;
             }
 
-            if (isEmpty(priceInput)) {
-                Toast.makeText(getContext(), "Vui lòng nhập giá tiền!", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            // Sử dụng phương thức parse từ DBHelper
             int price = dbHelper.parsePriceFromString(priceInput);
+            if (price <= 0) return;
 
-            if (price <= 0) {
-                Toast.makeText(getContext(), "Số tiền không hợp lệ! Vui lòng nhập số (vd: 10000, 10k, 0.5tr)", Toast.LENGTH_LONG).show();
-                return;
-            }
-
-            Log.d(TAG, "Adding new entry - Category: " + category + ", Price: " + price + ", PriceInput: " + priceInput);
-
-            inf.setTitle("");
+            Infomation inf = new Infomation();
             inf.setCategory(category);
             inf.setPrice(price);
             inf.setType("thu");
-            inf.setDate(selectedDateTime[0]);
-            inf.setTimestamp(dbHelper.convertDateToTimestamp(selectedDateTime[0]));
+            inf.setDate(selectedDate[0]);
+            inf.setTimestamp(dbHelper.convertDateToTimestamp(selectedDate[0]));
 
             dbHelper.insertInfomation(inf);
-
-            // Cập nhật dữ liệu
-            String selectedMonth = (String) spinnerMonth.getSelectedItem();
-            if (selectedMonth != null) {
-                loadDataForMonth(selectedMonth);
-            }
-
+            loadDataForMonth(spinnerMonth.getSelectedItem().toString());
             dialog.dismiss();
-            Toast.makeText(getContext(), "Đã thêm thành công: " + category + " - " + price + " đ", Toast.LENGTH_SHORT).show();
 
-            // Kiểm tra số dư âm
-            int income = dbHelper.getTotalIncome();
-            int expense = dbHelper.getTotalExpense();
-            int balance = income - expense;
-            if (balance < 0) {
-                sendNotification("⚠️ Số dư đã âm! Bạn nghèo rồi.");
-            }
+            checkBalanceAndNotify();
         });
 
-        btnCancel.setOnClickListener(v -> dialog.dismiss());
+        view.findViewById(R.id.btn_cancel).setOnClickListener(v -> dialog.dismiss());
     }
 
-    private void sendNotification(String message) {
-        NotificationManager notificationManager = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
-
-        String channelId = "sodu_channel";
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(channelId, "Số dư cảnh báo", NotificationManager.IMPORTANCE_HIGH);
-            notificationManager.createNotificationChannel(channel);
+    private void checkBalanceAndNotify() {
+        if (dbHelper.getTotalIncome() - dbHelper.getTotalExpense() < 0) {
+            sendNotification("⚠️ Số dư đã âm!");
         }
+    }
 
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(getContext(), channelId)
+    private void sendNotification(String msg) {
+        NotificationManager nm = (NotificationManager) getContext().getSystemService(Context.NOTIFICATION_SERVICE);
+        String id = "warning";
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            nm.createNotificationChannel(new NotificationChannel(id, "Cảnh báo", NotificationManager.IMPORTANCE_HIGH));
+        }
+        nm.notify(1, new NotificationCompat.Builder(getContext(), id)
                 .setSmallIcon(R.drawable.ic_warning)
                 .setContentTitle("Cảnh báo số dư")
-                .setContentText(message)
-                .setPriority(NotificationCompat.PRIORITY_HIGH);
-
-        notificationManager.notify(1, builder.build());
+                .setContentText(msg)
+                .build());
     }
 
-    @Override
-    public void onResume() {
-        super.onResume();
-
-        if (dbHelper != null && adapter != null) {
-            String selectedMonth = (String) spinnerMonth.getSelectedItem();
-            if (selectedMonth != null) {
-                List<Infomation> updatedList = dbHelper.getInfomationsByMonth("thu", selectedMonth);
-                adapter.setData(updatedList);
-            }
+    private void requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+                requireContext().checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS)
+                        != PackageManager.PERMISSION_GRANTED) {
+            requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 1001);
         }
     }
 }
