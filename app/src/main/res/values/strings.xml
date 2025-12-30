@@ -29,4 +29,18 @@
     <string name="total_income">Tổng thu: %s đ</string>
     <string name="total_expense">Tổng chi: %s đ</string>
     <string name="recent_transactions">Giao dịch gần đây</string>
+
+    <!-- Các string mới cho giọng nói -->
+    <string name="voice_input">Nhập bằng giọng nói</string>
+    <string name="speak_now">Hãy nói ngay bây giờ</string>
+    <string name="listening">Đang nghe...</string>
+    <string name="voice_ready">Sẵn sàng lắng nghe</string>
+    <string name="voice_processing">Đang xử lý...</string>
+    <string name="voice_cancel">Hủy</string>
+    <string name="voice_confirm">Xác nhận</string>
+    <string name="voice_replay">Nghe lại</string>
+    <string name="voice_permission">Cần quyền ghi âm để sử dụng tính năng này</string>
+    <string name="voice_not_supported">Thiết bị không hỗ trợ nhận diện giọng nói</string>
+    <string name="voice_example">Ví dụ: \'thu 5 triệu lương\', \'chi 200k xăng xe\'</string>
+
 </resources>

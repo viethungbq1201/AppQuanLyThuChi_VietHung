@@ -47,5 +47,17 @@
     <color name="chart_hole">#FFFFFF</color> <!-- Màu trắng cho lỗ tròn biểu đồ -->
     <color name="chart_transparent_circle">#404040</color> <!-- Vòng trong mờ -->
 
+    <color name="color_secondary">#64B5F6</color>
+
+    <!-- Màu thu/chi -->
+    <color name="result_background">#2D2D2D</color>
+    <color name="listening_color">#FF8A80</color>
+    <color name="success_color">#69F0AE</color>
+
+    <!-- Màu highlight -->
+    <color name="amount_highlight">#FFB74D</color>
+    <color name="income_highlight">#81C784</color>
+    <color name="expense_highlight">#E57373</color>
+
 
 </resources>

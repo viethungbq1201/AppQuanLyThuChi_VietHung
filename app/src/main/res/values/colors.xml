@@ -46,4 +46,18 @@
     <color name="chart_text">#212121</color>
     <color name="chart_hole">#FFFFFF</color>
     <color name="chart_transparent_circle">#F5F5F5</color>
+
+    <!-- Màu cơ bản -->
+    <color name="color_secondary">#42A5F5</color>
+
+    <color name="result_background">#F5F5F5</color>
+    <color name="listening_color">#FF5252</color>
+    <color name="success_color">#4CAF50</color>
+    <color name="amount_highlight">#FF9800</color>
+    <color name="income_highlight">#4CAF50</color>
+    <color name="expense_highlight">#F44336</color>
+
+
+
+
 </resources>
