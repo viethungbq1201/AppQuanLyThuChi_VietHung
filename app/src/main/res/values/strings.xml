@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">My Wallet</string>
+    <string name="spinner_prompt">Chọn loại</string>
+
+    <!-- Menu -->
+    <string name="menu_light_mode">Chế độ sáng</string>
+    <string name="menu_dark_mode">Chế độ tối</string>
+
+    <!-- Dialog messages -->
+    <string name="confirm_delete">Bạn có chắc muốn xóa mục này?</string>
+    <string name="delete">Xóa</string>
+    <string name="cancel">Hủy</string>
+
+    <!-- Toast messages -->
+    <string name="deleted_success">Đã xóa!</string>
+    <string name="updated_success">Đã cập nhật thành công</string>
+    <string name="added_success">Đã thêm thành công</string>
+
+    <!-- Tab titles -->
+    <string name="tab_home">Trang chủ</string>
+    <string name="tab_income">Trang thu</string>
+    <string name="tab_expense">Trang chi</string>
+    <string name="tab_note">Ghi chú</string>
+
+    <!-- Labels -->
+    <string name="total_balance">Số dư hiện tại: %s VND</string>
+    <string name="monthly_balance">Số dư tháng %s: %s VND</string>
+    <string name="total_income">Tổng thu: %s đ</string>
+    <string name="total_expense">Tổng chi: %s đ</string>
+    <string name="recent_transactions">Giao dịch gần đây</string>
+</resources>

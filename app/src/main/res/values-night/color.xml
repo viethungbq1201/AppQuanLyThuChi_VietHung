@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors -->
+    <color name="color_primary">#90CAF9</color>
+    <color name="color_primary_dark">#1E1E1E</color> <!-- Đổi thành màu nền tối -->
+    <color name="color_primary_light">#2D2D2D</color>
+
+    <!-- Background Colors -->
+    <color name="background_light">#121212</color>
+    <color name="background_grey">#1E1E1E</color>
+    <color name="background_card">#2D2D2D</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#FFFFFF</color> <!-- Đổi thành trắng cho dễ nhìn -->
+    <color name="text_secondary">#B0B0B0</color>
+    <color name="text_hint">#666666</color>
+    <color name="text_white">#FFFFFF</color>
+
+    <!-- Status Colors -->
+    <color name="color_income">#66BB6A</color>
+    <color name="color_expense">#EF5350</color>
+    <color name="color_warning">#FFB74D</color>
+
+    <!-- Border & Divider -->
+    <color name="border_light">#424242</color>
+    <color name="divider">#333333</color>
+
+    <!-- Tab & Navigation - CẢI THIỆN ĐỘ TƯƠNG PHẢN -->
+    <color name="tab_indicator">#90CAF9</color>
+    <color name="tab_selected_text">#90CAF9</color>
+    <color name="tab_unselected_text">#CCCCCC</color> <!-- Sáng hơn -->
+    <color name="tab_background">#1E1E1E</color> <!-- Màu nền tab -->
+
+    <!-- Button Colors -->
+    <color name="button_primary">#90CAF9</color>
+    <color name="button_secondary">#666666</color>
+    <color name="button_text">#FFFFFF</color>
+
+    <!-- Dialog Colors -->
+    <color name="dialog_background">#2D2D2D</color>
+    <color name="dialog_title">#90CAF9</color>
+
+    <!-- Chart Colors -->
+    <color name="chart_income">#66BB6A</color>
+    <color name="chart_expense">#EF5350</color>
+    <color name="chart_text">#FFFFFF</color>
+    <color name="chart_hole">#FFFFFF</color> <!-- Màu trắng cho lỗ tròn biểu đồ -->
+    <color name="chart_transparent_circle">#404040</color> <!-- Vòng trong mờ -->
+
+
+</resources>

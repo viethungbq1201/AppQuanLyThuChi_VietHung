@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Primary Colors -->
+    <color name="color_primary">#64B5F6</color>
+    <color name="color_primary_dark">#1976D2</color>
+    <color name="color_primary_light">#BBDEFB</color>
+
+    <!-- Background Colors -->
+    <color name="background_light">#FFFFFF</color>
+    <color name="background_grey">#F5F5F5</color>
+    <color name="background_card">#FFFFFF</color>
+
+    <!-- Text Colors -->
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="text_hint">#9E9E9E</color>
+    <color name="text_white">#FFFFFF</color>
+
+    <!-- Status Colors -->
+    <color name="color_income">#4CAF50</color>
+    <color name="color_expense">#F44336</color>
+    <color name="color_warning">#FF9800</color>
+
+    <!-- Border & Divider -->
+    <color name="border_light">#E0E0E0</color>
+    <color name="divider">#EEEEEE</color>
+
+    <!-- Tab & Navigation -->
+    <color name="tab_indicator">#64B5F6</color>
+    <color name="tab_selected_text">#64B5F6</color>
+    <color name="tab_unselected_text">#757575</color>
+    <color name="tab_background">#FFFFFF</color>
+
+    <!-- Button Colors -->
+    <color name="button_primary">#64B5F6</color>
+    <color name="button_secondary">#757575</color>
+    <color name="button_text">#FFFFFF</color>
+
+    <!-- Dialog Colors -->
+    <color name="dialog_background">#FFFFFF</color>
+    <color name="dialog_title">#64B5F6</color>
+
+    <!-- Chart Colors -->
+    <color name="chart_income">#4CAF50</color>
+    <color name="chart_expense">#F44336</color>
+    <color name="chart_text">#212121</color>
+    <color name="chart_hole">#FFFFFF</color>
+    <color name="chart_transparent_circle">#F5F5F5</color>
+</resources>
