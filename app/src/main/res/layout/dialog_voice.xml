@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#80000000"
+    android:padding="24dp">
+
+    <!-- NÚT HỦY GÓC TRÊN PHẢI -->
+    <ImageButton
+        android:id="@+id/btn_cancel"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:src="@drawable/ic_close_24"
+        android:background="@drawable/circle_bg_grey"
+        android:contentDescription="Hủy" />
+
+    <!-- CARD CHÍNH -->
+    <androidx.cardview.widget.CardView
+        android:id="@+id/card_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="8dp"
+        android:layout_margin="16dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:backgroundTint="@color/background_grey">
+
+            <!-- ICON MIC LỚN -->
+            <ImageView
+                android:id="@+id/iv_mic"
+                android:layout_width="100dp"
+                android:layout_height="100dp"
+                android:layout_gravity="center"
+                android:src="@drawable/ic_mic_48"
+                android:layout_marginBottom="24dp"
+                android:contentDescription="Microphone" />
+
+            <!-- TRẠNG THÁI -->
+            <TextView
+                android:id="@+id/tv_status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Nhấn nút để bắt đầu nói"
+                android:textSize="18sp"
+                android:textColor="?attr/colorOnBackground"
+                android:textStyle="bold"
+                android:layout_marginBottom="16dp" />
+
+            <!-- KẾT QUẢ NHẬN DIỆN -->
+            <TextView
+                android:id="@+id/tv_result"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text=""
+                android:textSize="16sp"
+                android:textColor="?attr/colorOnSurface"
+                android:gravity="center"
+                android:minHeight="60dp"
+                android:padding="16dp"
+                android:background="?attr/colorSurfaceVariant"
+                android:layout_marginBottom="24dp" />
+
+            <!-- WAVE ANIMATION (HIỆN KHI ĐANG NGHE) -->
+            <ImageView
+                android:id="@+id/iv_wave"
+                android:layout_width="120dp"
+                android:layout_height="60dp"
+                android:layout_gravity="center"
+                android:src="@drawable/voice_wave"
+                android:visibility="gone"
+                android:layout_marginBottom="24dp" />
+
+            <!-- NÚT ĐIỀU KHIỂN -->
+            <LinearLayout
+                android:id="@+id/layout_controls"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center"
+                android:layout_marginTop="16dp">
+
+                <!-- NÚT OK (CHỈ HIỆN KHI CÓ KẾT QUẢ) -->
+                <Button
+                    android:id="@+id/btn_ok"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="XÁC NHẬN"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="?attr/colorPrimary"
+                    android:visibility="gone"
+                    android:layout_marginEnd="8dp" />
+
+                <!-- NÚT PHÁT LẠI (CHỈ HIỆN KHI CÓ KẾT QUẢ) -->
+                <Button
+                    android:id="@+id/btn_replay"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:text="NGHE LẠI"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="?attr/colorSecondary"
+                    android:visibility="gone"
+                    android:layout_marginStart="8dp" />
+
+                <!-- NÚT BẮT ĐẦU NÓI -->
+                <Button
+                    android:id="@+id/btn_start"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:text="BẮT ĐẦU NÓI"
+                    android:textColor="#FFFFFF"
+                    android:backgroundTint="?attr/colorPrimary"
+                    android:paddingStart="32dp"
+                    android:paddingEnd="32dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </androidx.cardview.widget.CardView>
+
+</RelativeLayout>
