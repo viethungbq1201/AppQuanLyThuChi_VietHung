@@ -64,7 +64,7 @@ public class Trangchu_Fragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
-                             @Nullable Bundle savedInstanceState) {
+            @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.trang_chu, container, false);
 
         dbHelper = new DBHelper(getContext());
@@ -82,7 +82,7 @@ public class Trangchu_Fragment extends Fragment {
         loadAllData();
         updateTotalBalance();
 
-        voiceHelper = new VoiceInputHelper(getContext(), getActivity());
+        voiceHelper = new VoiceInputHelper(getContext(), this);
         voiceHelper.setListener(new VoiceInputHelper.VoiceListener() {
             @Override
             public void onVoiceResult(String text) {
@@ -102,7 +102,8 @@ public class Trangchu_Fragment extends Fragment {
             }
 
             @Override
-            public void onListeningStopped() {}
+            public void onListeningStopped() {
+            }
         });
 
         fabVoiceInput.setOnClickListener(v -> showVoiceDialog());
@@ -218,15 +219,17 @@ public class Trangchu_Fragment extends Fragment {
         if (lowerText.contains("thu") || lowerText.contains("nhận") ||
                 lowerText.contains("lương") || lowerText.contains("tiếp")) {
             int start = findFirstOccurrence(lowerText, "thu", "nhận", "lương", "tiếp");
-            if (start != -1) spannable.setSpan(new ForegroundColorSpan(incomeColor),
-                    start, start + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if (start != -1)
+                spannable.setSpan(new ForegroundColorSpan(incomeColor),
+                        start, start + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
         if (lowerText.contains("chi") || lowerText.contains("mua") ||
                 lowerText.contains("trả") || lowerText.contains("tiêu")) {
             int start = findFirstOccurrence(lowerText, "chi", "mua", "trả", "tiêu");
-            if (start != -1) spannable.setSpan(new ForegroundColorSpan(expenseColor),
-                    start, start + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            if (start != -1)
+                spannable.setSpan(new ForegroundColorSpan(expenseColor),
+                        start, start + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         }
 
         textView.setText(spannable);
@@ -235,7 +238,8 @@ public class Trangchu_Fragment extends Fragment {
     private int findFirstOccurrence(String text, String... keywords) {
         for (String keyword : keywords) {
             int index = text.indexOf(keyword);
-            if (index != -1) return index;
+            if (index != -1)
+                return index;
         }
         return -1;
     }
@@ -258,7 +262,9 @@ public class Trangchu_Fragment extends Fragment {
                 int num = Integer.parseInt(matcher.group(1));
                 String unit = matcher.group(2);
                 amount = unit.contains("tr") || unit.contains("triệu") ? num * 1000000 : num * 1000;
-            } catch (Exception e) { amount = 0; }
+            } catch (Exception e) {
+                amount = 0;
+            }
         }
 
         if (lowerText.contains("ăn") || lowerText.contains("cơm") || lowerText.contains("bún")) {
@@ -287,8 +293,7 @@ public class Trangchu_Fragment extends Fragment {
                 type.equals("thu") ? "THU NHẬP" : "CHI TIÊU",
                 category,
                 new DecimalFormat("#,###").format(amount),
-                description
-        );
+                description);
 
         builder.setMessage(message)
                 .setPositiveButton("THÊM NGAY", (dialog, which) -> saveTransaction(type, amount, category, description))
@@ -309,6 +314,7 @@ public class Trangchu_Fragment extends Fragment {
         info.setPrice(amount);
         info.setType(type);
         info.setDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
+        info.setTimestamp(System.currentTimeMillis());
 
         dbHelper.insertInfomation(info);
 
@@ -331,7 +337,8 @@ public class Trangchu_Fragment extends Fragment {
         }, 1000);
 
         Toast.makeText(getContext(), String.format("Đã thêm %s %s đ",
-                type.equals("thu") ? "thu" : "chi", new DecimalFormat("#,###").format(amount)), Toast.LENGTH_SHORT).show();
+                type.equals("thu") ? "thu" : "chi", new DecimalFormat("#,###").format(amount)), Toast.LENGTH_SHORT)
+                .show();
     }
 
     private void showEditDialog(String type, int amount, String category, String description) {
@@ -351,8 +358,7 @@ public class Trangchu_Fragment extends Fragment {
         ArrayAdapter<String> monthAdapter = new ArrayAdapter<>(
                 getContext(),
                 android.R.layout.simple_spinner_item,
-                months
-        );
+                months);
         monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         spinnerMonth.setAdapter(monthAdapter);
 
@@ -433,8 +439,10 @@ public class Trangchu_Fragment extends Fragment {
         int totalExpense = dbHelper.getTotalExpense();
 
         List<PieEntry> entries = new ArrayList<>();
-        if (totalIncome > 0) entries.add(new PieEntry(totalIncome, "Tổng thu"));
-        if (totalExpense > 0) entries.add(new PieEntry(totalExpense, "Tổng chi"));
+        if (totalIncome > 0)
+            entries.add(new PieEntry(totalIncome, "Tổng thu"));
+        if (totalExpense > 0)
+            entries.add(new PieEntry(totalExpense, "Tổng chi"));
 
         if (entries.isEmpty()) {
             pieChart.clear();
@@ -486,8 +494,10 @@ public class Trangchu_Fragment extends Fragment {
         int expense = dbHelper.getTotalExpenseByMonth(monthYear);
 
         List<PieEntry> entries = new ArrayList<>();
-        if (income > 0) entries.add(new PieEntry(income, "Thu"));
-        if (expense > 0) entries.add(new PieEntry(expense, "Chi"));
+        if (income > 0)
+            entries.add(new PieEntry(income, "Thu"));
+        if (expense > 0)
+            entries.add(new PieEntry(expense, "Chi"));
 
         if (entries.isEmpty()) {
             pieChart.clear();
@@ -538,7 +548,6 @@ public class Trangchu_Fragment extends Fragment {
         pieChart.invalidate();
     }
 
-
     @Override
     public void onResume() {
         super.onResume();
@@ -556,8 +565,7 @@ public class Trangchu_Fragment extends Fragment {
             ArrayAdapter<String> monthAdapter = new ArrayAdapter<>(
                     getContext(),
                     android.R.layout.simple_spinner_item,
-                    months
-            );
+                    months);
             monthAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             spinnerMonth.setAdapter(monthAdapter);
 
@@ -577,13 +585,15 @@ public class Trangchu_Fragment extends Fragment {
     @Override
     public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (voiceHelper != null) voiceHelper.handleActivityResult(requestCode, resultCode, data);
+        if (voiceHelper != null)
+            voiceHelper.handleActivityResult(requestCode, resultCode, data);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-                                           @NonNull int[] grantResults) {
+            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (voiceHelper != null) voiceHelper.handlePermissionResult(requestCode, permissions, grantResults);
+        if (voiceHelper != null)
+            voiceHelper.handlePermissionResult(requestCode, permissions, grantResults);
     }
 }

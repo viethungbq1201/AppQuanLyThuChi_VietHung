@@ -10,6 +10,7 @@ import android.speech.SpeechRecognizer;
 import android.widget.Toast;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
 import java.util.ArrayList;
 
 public class VoiceInputHelper {
@@ -19,12 +20,16 @@ public class VoiceInputHelper {
 
     private Context context;
     private Activity activity;
+    private Fragment fragment;
     private VoiceListener listener;
 
     public interface VoiceListener {
         void onVoiceResult(String text);
+
         void onVoiceError(String message);
+
         void onListeningStarted();
+
         void onListeningStopped();
     }
 
@@ -33,16 +38,27 @@ public class VoiceInputHelper {
         this.activity = activity;
     }
 
+    public VoiceInputHelper(Context context, Fragment fragment) {
+        this.context = context;
+        this.fragment = fragment;
+        this.activity = fragment.getActivity();
+    }
+
     public void setListener(VoiceListener listener) {
         this.listener = listener;
     }
 
     public boolean checkPermission() {
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(activity,
-                    new String[]{Manifest.permission.RECORD_AUDIO},
-                    REQUEST_RECORD_AUDIO_PERMISSION);
+        if (ContextCompat.checkSelfPermission(context,
+                Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            if (fragment != null) {
+                fragment.requestPermissions(new String[] { Manifest.permission.RECORD_AUDIO },
+                        REQUEST_RECORD_AUDIO_PERMISSION);
+            } else {
+                ActivityCompat.requestPermissions(activity,
+                        new String[] { Manifest.permission.RECORD_AUDIO },
+                        REQUEST_RECORD_AUDIO_PERMISSION);
+            }
             return false;
         }
         return true;
@@ -50,16 +66,19 @@ public class VoiceInputHelper {
 
     public void startListening() {
         if (!checkPermission()) {
-            if (listener != null) listener.onVoiceError("Cần cấp quyền ghi âm");
+            if (listener != null)
+                listener.onVoiceError("Cần cấp quyền ghi âm");
             return;
         }
 
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
-            if (listener != null) listener.onVoiceError("Thiết bị không hỗ trợ nhận diện giọng nói");
+            if (listener != null)
+                listener.onVoiceError("Thiết bị không hỗ trợ nhận diện giọng nói");
             return;
         }
 
-        if (listener != null) listener.onListeningStarted();
+        if (listener != null)
+            listener.onListeningStarted();
 
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -68,15 +87,21 @@ public class VoiceInputHelper {
         intent.putExtra(RecognizerIntent.EXTRA_MAX_RESULTS, 1);
 
         try {
-            activity.startActivityForResult(intent, REQUEST_SPEECH_RECOGNITION);
+            if (fragment != null) {
+                fragment.startActivityForResult(intent, REQUEST_SPEECH_RECOGNITION);
+            } else {
+                activity.startActivityForResult(intent, REQUEST_SPEECH_RECOGNITION);
+            }
         } catch (Exception e) {
-            if (listener != null) listener.onVoiceError("Không thể mở nhận diện giọng nói");
+            if (listener != null)
+                listener.onVoiceError("Không thể mở nhận diện giọng nói");
         }
     }
 
     public void handleActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_SPEECH_RECOGNITION) {
-            if (listener != null) listener.onListeningStopped();
+            if (listener != null)
+                listener.onListeningStopped();
 
             if (resultCode == Activity.RESULT_OK && data != null) {
                 ArrayList<String> results = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
@@ -96,7 +121,8 @@ public class VoiceInputHelper {
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 startListening();
             } else {
-                if (listener != null) listener.onVoiceError("Từ chối quyền ghi âm");
+                if (listener != null)
+                    listener.onVoiceError("Từ chối quyền ghi âm");
                 Toast.makeText(context, "Cần quyền ghi âm để sử dụng tính năng này", Toast.LENGTH_SHORT).show();
             }
         }
