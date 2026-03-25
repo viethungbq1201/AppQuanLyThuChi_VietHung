@@ -6,14 +6,15 @@
     <color name="color_primary_light">#BBDEFB</color>
 
     <!-- Background Colors -->
-    <color name="background_light">#FFFFFF</color>
-    <color name="background_grey">#F5F5F5</color>
+    <color name="background_light">#F2F2F7</color>
+    <color name="background_grey">#F2F2F7</color>
     <color name="background_card">#FFFFFF</color>
 
     <!-- Text Colors -->
-    <color name="text_primary">#212121</color>
+    <color name="text_primary">#000000</color>
     <color name="text_secondary">#757575</color>
     <color name="text_hint">#9E9E9E</color>
+    <color name="text_placeholder">#9E9E9E</color>
     <color name="text_white">#FFFFFF</color>
 
     <!-- Status Colors -->

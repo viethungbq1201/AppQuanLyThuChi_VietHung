@@ -42,4 +42,9 @@ z
 
     <style name="Theme.BTL_QuanLiThuChi" parent="Base.Theme.BTL_QuanLiThuChi" />
 
+    <style name="ShapeAppearanceOverlay.App.RoundedFAB" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
 </resources>

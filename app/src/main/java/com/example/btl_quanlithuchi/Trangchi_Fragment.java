@@ -126,6 +126,30 @@ public class Trangchi_Fragment extends Fragment {
 
         final String[] selectedDate = { sdf.format(cal.getTime()) };
 
+        Spinner spinner = view.findViewById(R.id.spinner);
+
+        // Spinner Setup
+        String[] options = {"Nhập loại tiền chi", "Gửi xe 1", "Gửi xe 2", "Gửi xe 3", "Xăng", "Nạp điện thoại", "Xe Thái Bình", "Khác"};
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_item, options);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(spinnerAdapter);
+
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
+                if (position > 0) {
+                    String selected = options[position];
+                    edtCategory.setText(selected);
+                    int defaultPrice = dbHelper.getDefaultPriceForCategory(selected);
+                    if (defaultPrice > 0) {
+                        edtPrice.setText(new DecimalFormat("#,###").format(defaultPrice));
+                    }
+                }
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
         tvDate.setOnClickListener(v ->
                 new DatePickerDialog(
                         getContext(),

@@ -24,10 +24,10 @@
     <string name="tab_note">Ghi chú</string>
 
     <!-- Labels -->
-    <string name="total_balance">Số dư hiện tại: %s VND</string>
-    <string name="monthly_balance">Số dư tháng %s: %s VND</string>
-    <string name="total_income">Tổng thu: %s đ</string>
-    <string name="total_expense">Tổng chi: %s đ</string>
+    <string name="total_balance">Số dư hiện tại: %1$s VND</string>
+    <string name="monthly_balance">Số dư tháng %1$s: %2$s VND</string>
+    <string name="total_income">Tổng thu: %1$s đ</string>
+    <string name="total_expense">Tổng chi: %1$s đ</string>
     <string name="recent_transactions">Giao dịch gần đây</string>
 
     <!-- Các string mới cho giọng nói -->

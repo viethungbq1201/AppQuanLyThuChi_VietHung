@@ -104,6 +104,30 @@ public class Trangthu_Fragment extends Fragment {
         tvDate.setText("Ngày: " + sdf.format(cal.getTime()));
         final String[] selectedDate = { sdf.format(cal.getTime()) };
 
+        Spinner spinner = view.findViewById(R.id.spinner);
+
+        // Spinner Setup
+        String[] options = {"Nhập loại tiền thu", "Lương", "Bố mẹ", "Khác"};
+        ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(getContext(),
+                android.R.layout.simple_spinner_item, options);
+        spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinner.setAdapter(spinnerAdapter);
+
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View v, int position, long id) {
+                if (position > 0) {
+                    String selected = options[position];
+                    edtCategory.setText(selected);
+                    int defaultPrice = dbHelper.getDefaultPriceForCategory(selected);
+                    if (defaultPrice > 0) {
+                        edtPrice.setText(new DecimalFormat("#,###").format(defaultPrice));
+                    }
+                }
+            }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
+
         tvDate.setOnClickListener(v ->
                 new DatePickerDialog(getContext(),
                         (d, y, m, day) -> {

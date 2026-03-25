@@ -48,6 +48,12 @@ public class VoiceInputHelper {
         this.listener = listener;
     }
 
+    public boolean isSpeechAvailable() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        PackageManager pm = context.getPackageManager();
+        return !pm.queryIntentActivities(intent, 0).isEmpty();
+    }
+
     public boolean checkPermission() {
         if (ContextCompat.checkSelfPermission(context,
                 Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {

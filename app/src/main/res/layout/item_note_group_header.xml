@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/root_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="8dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:padding="12dp">
+
+    <CheckBox
+        android:id="@+id/cb_group"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:button="@null"
+        android:background="?android:attr/listChoiceIndicatorMultiple"
+        android:buttonTint="@color/color_primary" />
+
+    <EditText
+        android:id="@+id/et_group_title"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:text="Danh sách công việc"
+        android:textColor="@color/text_primary"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:background="@null"
+        android:inputType="textCapSentences"
+        android:imeOptions="actionDone"/>
+
+    <TextView
+        android:id="@+id/tv_group_progress"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:text="0 / 0"
+        android:textColor="@color/text_secondary"
+        android:textSize="14sp" />
+
+    <ImageView
+        android:id="@+id/iv_revert"
+        android:layout_width="28dp"
+        android:layout_height="28dp"
+        android:layout_marginEnd="8dp"
+        android:src="@android:drawable/ic_menu_revert"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        app:tint="@color/text_secondary" />
+
+</LinearLayout>

@@ -132,7 +132,6 @@ public class DBHelper extends SQLiteOpenHelper {
         values.put("type", inf.getType());
         values.put("timestamp", inf.getTimestamp());
         db.insert("Infomations", null, values);
-        db.close();
     }
 
     public List<Infomation> getInfomationsByType(String type) {
@@ -158,7 +157,6 @@ public class DBHelper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
         cursor.close();
-        db.close();
         return list;
     }
 
@@ -185,7 +183,6 @@ public class DBHelper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
         cursor.close();
-        db.close();
         return list;
     }
 
@@ -199,13 +196,11 @@ public class DBHelper extends SQLiteOpenHelper {
         values.put("timestamp", info.getTimestamp());
         values.put("type", info.getType());
         db.update("Infomations", values, "id = ?", new String[]{String.valueOf(info.getId())});
-        db.close();
     }
 
     public void deleteInfomation(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete("Infomations", "id = ?", new String[]{String.valueOf(id)});
-        db.close();
     }
 
     public int getTotalIncome() {
@@ -256,7 +251,6 @@ public class DBHelper extends SQLiteOpenHelper {
             } while (cursor.moveToNext());
         }
         cursor.close();
-        db.close();
         return months;
     }
 
@@ -275,6 +269,29 @@ public class DBHelper extends SQLiteOpenHelper {
                 return System.currentTimeMillis();
             }
         }
+    }
+
+    // Tiện ích: Lấy giá tiền mặc định theo danh mục
+    public int getDefaultPriceForCategory(String category) {
+        if (category == null || category.isEmpty()) return 0;
+        String lower = category.toLowerCase().trim();
+
+        // THU NHẬP
+        if (lower.equals("lương")) return 5000000;
+        if (lower.equals("bố mẹ")) return 2000000;
+        if (lower.contains("tip") || lower.contains("tiếp")) return 50000;
+
+        // CHI TIÊU
+        if (lower.contains("gửi xe 1") || lower.contains("gửi xe 2") || lower.contains("gửi xe 3")) return 5000;
+        if (lower.contains("gửi xe")) return 3000;
+        if (lower.equals("xăng")) return 50000;
+        if (lower.contains("nạp điện thoại") || lower.contains("điện thoại")) return 50000;
+        if (lower.contains("ăn sáng")) return 30000;
+        if (lower.contains("ăn trưa") || lower.contains("ăn tối")) return 50000;
+        if (lower.contains("xe thái bình")) return 100000;
+        if (lower.contains("grab") || lower.contains("bee") || lower.contains("be")) return 30000;
+
+        return 0;
     }
 
     // Tiện ích: Parse giá tiền
@@ -330,7 +347,6 @@ public class DBHelper extends SQLiteOpenHelper {
 
         // Quan trọng: insert trả về ID của dòng mới, hoặc -1 nếu lỗi
         long id = db.insert("notes", null, values); // Sửa "notes" thành tên bảng của bạn
-        db.close();
         return id;
     }
 
@@ -343,7 +359,9 @@ public class DBHelper extends SQLiteOpenHelper {
                 COLUMN_ID + "=?",
                 new String[]{String.valueOf(id)}, null, null, null, null);
 
+        Note note = null;
         if (cursor != null && cursor.moveToFirst()) {
+            note = new Note();
             note.setId(cursor.getInt(0));
             note.setContent(cursor.getString(1));
             note.setCheckbox(cursor.getInt(2) == 1);
@@ -383,7 +401,6 @@ public class DBHelper extends SQLiteOpenHelper {
         }
 
         cursor.close();
-        db.close();
         return notes;
     }
 
@@ -401,7 +418,6 @@ public class DBHelper extends SQLiteOpenHelper {
 
         int rows = db.update(TABLE_NOTES, values, COLUMN_ID + " = ?",
                 new String[]{String.valueOf(note.getId())});
-        db.close();
         return rows;
     }
 
@@ -409,7 +425,6 @@ public class DBHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete(TABLE_NOTES, COLUMN_ID + " = ?",
                 new String[]{String.valueOf(id)});
-        db.close();
     }
 
     public void updateNotePosition(int id, int position) {
@@ -417,7 +432,6 @@ public class DBHelper extends SQLiteOpenHelper {
         ContentValues values = new ContentValues();
         values.put(COLUMN_POSITION, position);
         db.update(TABLE_NOTES, values, COLUMN_ID + " = ?", new String[]{String.valueOf(id)});
-        db.close();
     }
 
     public int getNextGroupId() {
@@ -431,7 +445,6 @@ public class DBHelper extends SQLiteOpenHelper {
         }
 
         cursor.close();
-        db.close();
         return maxId + 1;
     }
 }

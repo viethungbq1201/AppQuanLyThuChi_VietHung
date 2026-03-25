@@ -257,7 +257,12 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
                 }
 
                 if (position > 0) {
-                    edtCategory.setText(options[position]);
+                    String selected = options[position];
+                    edtCategory.setText(selected);
+                    int defaultPrice = dbHelper.getDefaultPriceForCategory(selected);
+                    if (defaultPrice > 0) {
+                        edtPrice.setText(new DecimalFormat("#,###").format(defaultPrice));
+                    }
                 } else {
                     edtCategory.setText("");
                 }

@@ -1,11 +1,16 @@
 package com.example.btl_quanlithuchi;
 
+import android.app.AlertDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -16,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,7 +30,10 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
     private RecyclerView recyclerView;
     private NoteAdapter noteAdapter;
     private FloatingActionButton fabAdd;
+    private Button btnDeleteAll;
+    private ImageView btnVoiceInput;
     private DBHelper dbHelper;
+    private VoiceInputHelper voiceInputHelper;
 
     @Nullable
     @Override
@@ -34,16 +43,103 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
 
         recyclerView = view.findViewById(R.id.recyclerView_notes);
         fabAdd = view.findViewById(R.id.fab_add_note);
-
+        btnDeleteAll = view.findViewById(R.id.btn_delete_all_notes);
+        btnVoiceInput = view.findViewById(R.id.btn_voice_input_note);
 
         dbHelper = new DBHelper(getContext());
+        voiceInputHelper = new VoiceInputHelper(getContext(), this);
+        
+        // Hide voice input if not available
+        if (!voiceInputHelper.isSpeechAvailable()) {
+            btnVoiceInput.setVisibility(View.GONE);
+        }
+
+        voiceInputHelper.setListener(new VoiceInputHelper.VoiceListener() {
+            @Override
+            public void onVoiceResult(String text) {
+                addNewNoteWithContent(text);
+            }
+
+            @Override
+            public void onVoiceError(String message) {
+                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onListeningStarted() {
+                Toast.makeText(getContext(), "Đang nghe...", Toast.LENGTH_SHORT).show();
+            }
+
+            @Override
+            public void onListeningStopped() {
+                // Done listening
+            }
+        });
 
         setupRecyclerView();
         loadNotes();
 
         fabAdd.setOnClickListener(v -> addNewNote());
+        btnDeleteAll.setOnClickListener(v -> showDeleteAllConfirmation());
+        btnVoiceInput.setOnClickListener(v -> voiceInputHelper.startListening());
 
         return view;
+    }
+
+    private void showDeleteAllConfirmation() {
+        new AlertDialog.Builder(getContext())
+                .setTitle("Xóa tất cả?")
+                .setMessage("Bạn có chắc chắn muốn xóa tất cả ghi chú?")
+                .setPositiveButton("Xóa", (dialog, which) -> deleteAllNotes())
+                .setNegativeButton("Hủy", null)
+                .show();
+    }
+
+    private void deleteAllNotes() {
+        new Thread(() -> {
+            List<Note> allNotes = noteAdapter.getNotesListInternal();
+            for (Note n : allNotes) {
+                dbHelper.deleteNote(n.getId());
+            }
+            new Handler(Looper.getMainLooper()).post(() -> {
+                noteAdapter.setNotes(new ArrayList<>());
+                Toast.makeText(getContext(), "Đã xóa tất cả ghi chú", Toast.LENGTH_SHORT).show();
+            });
+        }).start();
+    }
+
+    private void addNewNoteWithContent(String content) {
+        Note newNote = new Note(content);
+        newNote.setPosition(0);
+
+        long id = dbHelper.addNote(newNote);
+        if (id != -1) {
+            newNote.setId((int) id);
+            noteAdapter.addNoteToTop(newNote);
+            recyclerView.scrollToPosition(0);
+            syncPositions();
+        }
+    }
+
+    private void syncPositions() {
+        new Thread(() -> {
+            List<Note> allNotes = noteAdapter.getNotesListInternal();
+            for (Note n : allNotes) {
+                dbHelper.updateNotePosition(n.getId(), n.getPosition());
+            }
+        }).start();
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        voiceInputHelper.handleActivityResult(requestCode, resultCode, data);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        voiceInputHelper.handlePermissionResult(requestCode, permissions, grantResults);
     }
 
     private void setupRecyclerView() {
@@ -75,7 +171,18 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
                 int position = viewHolder.getAdapterPosition();
-                noteAdapter.deleteItem(position);
+                Note n = noteAdapter.notes.get(position);
+                
+                if (n.isGroup()) {
+                    new AlertDialog.Builder(getContext())
+                            .setTitle("Xóa nhóm?")
+                            .setMessage("Bạn có muốn xóa toàn bộ nhóm này không?")
+                            .setPositiveButton("Xóa", (dialog, which) -> noteAdapter.deleteGroup(n.getGroupId()))
+                            .setNegativeButton("Hủy", (dialog, which) -> noteAdapter.notifyItemChanged(position))
+                            .show();
+                } else {
+                    noteAdapter.deleteItem(position);
+                }
             }
 
             @Override
@@ -134,6 +241,30 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
     public void onNoteAdded(Note note) {
         long id = dbHelper.addNote(note);
         note.setId((int) id);
+    }
+
+    @Override
+    public void onNoteAddedAfter(int position, int groupId) {
+        Note newNote = new Note("");
+        newNote.setCheckbox(true);
+        newNote.setGroupId(groupId);
+        newNote.setPosition(position + 1);
+
+        long id = dbHelper.addNote(newNote);
+        if (id != -1) {
+            newNote.setId((int) id);
+            noteAdapter.notes.add(position + 1, newNote);
+            noteAdapter.notifyItemInserted(position + 1);
+            noteAdapter.notifyItemRangeChanged(position + 1, noteAdapter.getItemCount() - position - 1);
+            
+            // Sync positions and scroll
+            onRequestSyncDatabase();
+            
+            // Focus the new item after a short delay
+            new Handler(Looper.getMainLooper()).postDelayed(() -> {
+                recyclerView.scrollToPosition(position + 1);
+            }, 100);
+        }
     }
 
     @Override

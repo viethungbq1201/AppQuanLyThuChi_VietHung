@@ -6,9 +6,9 @@
     <color name="color_primary_light">#2D2D2D</color>
 
     <!-- Background Colors -->
-    <color name="background_light">#121212</color>
-    <color name="background_grey">#1E1E1E</color>
-    <color name="background_card">#2D2D2D</color>
+    <color name="background_light">#000000</color>
+    <color name="background_grey">#000000</color>
+    <color name="background_card">#CC1C1C1E</color> <!-- Glassmorphism: 80% alpha -->
 
     <!-- Text Colors -->
     <color name="text_primary">#FFFFFF</color> <!-- Đổi thành trắng cho dễ nhìn -->
