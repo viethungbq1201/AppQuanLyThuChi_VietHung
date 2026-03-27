@@ -204,22 +204,28 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
     }
 
     private void addNewNote() {
+        // Fix 4: Prevent spamming — if the first note is already empty, just focus it
+        if (!noteAdapter.notes.isEmpty()) {
+            Note first = noteAdapter.notes.get(0);
+            if (!first.isGroup() && !first.isCheckbox()
+                    && (first.getContent() == null || first.getContent().trim().isEmpty())) {
+                // Already have an empty note at top — focus it instead
+                noteAdapter.setFocusPosition(0);
+                noteAdapter.notifyItemChanged(0);
+                recyclerView.scrollToPosition(0);
+                return;
+            }
+        }
+
         Note newNote = new Note("");
-        newNote.setPosition(0); // Quan trọng: Đặt vị trí là 0 để lên đầu
+        newNote.setPosition(0);
 
         long id = dbHelper.addNote(newNote);
         if (id != -1) {
             newNote.setId((int) id);
-
-            // Gọi hàm mới trong Adapter để chèn lên đầu
             noteAdapter.addNoteToTop(newNote);
-
-            // Cuộn lên đầu trang
             recyclerView.scrollToPosition(0);
 
-            // Vì ta chèn vào đầu, toàn bộ các note cũ phải lùi position +1
-            // Gọi sync để cập nhật lại position trong Database cho chuẩn
-            // (Chạy ngầm để không giật UI)
             new Thread(() -> {
                 List<Note> allNotes = noteAdapter.getNotesListInternal();
                 for (Note n : allNotes) {
@@ -245,6 +251,19 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
 
     @Override
     public void onNoteAddedAfter(int position, int groupId) {
+        // Prevent adding multiple empty checkboxes
+        if (position + 1 < noteAdapter.notes.size()) {
+            Note next = noteAdapter.notes.get(position + 1);
+            if (next.isCheckbox() && next.getGroupId() == groupId
+                    && (next.getContent() == null || next.getContent().trim().isEmpty())) {
+                // Already have an empty checkbox below — just focus it
+                noteAdapter.setFocusPosition(position + 1);
+                noteAdapter.notifyItemChanged(position + 1);
+                recyclerView.scrollToPosition(position + 1);
+                return;
+            }
+        }
+
         Note newNote = new Note("");
         newNote.setCheckbox(true);
         newNote.setGroupId(groupId);
@@ -254,13 +273,14 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
         if (id != -1) {
             newNote.setId((int) id);
             noteAdapter.notes.add(position + 1, newNote);
+            noteAdapter.setFocusPosition(position + 1); // Auto-focus the new checkbox
             noteAdapter.notifyItemInserted(position + 1);
+            // Rebind previous item so its group background updates correctly
+            noteAdapter.notifyItemChanged(position);
             noteAdapter.notifyItemRangeChanged(position + 1, noteAdapter.getItemCount() - position - 1);
-            
-            // Sync positions and scroll
+
             onRequestSyncDatabase();
-            
-            // Focus the new item after a short delay
+
             new Handler(Looper.getMainLooper()).postDelayed(() -> {
                 recyclerView.scrollToPosition(position + 1);
             }, 100);

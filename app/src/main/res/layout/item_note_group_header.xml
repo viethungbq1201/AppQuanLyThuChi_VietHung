@@ -9,13 +9,14 @@
     android:gravity="center_vertical"
     android:padding="12dp">
 
-    <CheckBox
+    <com.google.android.material.checkbox.MaterialCheckBox
         android:id="@+id/cb_group"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:button="@null"
-        android:background="?android:attr/listChoiceIndicatorMultiple"
-        android:buttonTint="@color/color_primary" />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minWidth="0dp"
+        android:minHeight="0dp"
+        app:useMaterialThemeColors="false"
+        app:buttonTint="@color/checkbox_tint" />
 
     <EditText
         android:id="@+id/et_group_title"
@@ -23,7 +24,8 @@
         android:layout_height="wrap_content"
         android:layout_weight="1"
         android:layout_marginStart="12dp"
-        android:text="Danh sách công việc"
+        android:hint="Danh sách công việc"
+        android:textColorHint="@color/text_hint"
         android:textColor="@color/text_primary"
         android:textSize="18sp"
         android:textStyle="bold"

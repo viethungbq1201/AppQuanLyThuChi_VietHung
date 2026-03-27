@@ -19,14 +19,17 @@
         android:paddingTop="12dp"
         android:paddingBottom="12dp"> 
 
-        <CheckBox
+        <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/checkbox_note"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="-4dp"
-            android:buttonTint="@color/color_primary"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
             android:clickable="true"
-            android:focusable="false"/>
+            android:focusable="false"
+            app:useMaterialThemeColors="false"
+            app:buttonTint="@color/checkbox_tint" />
 
         <EditText
             android:id="@+id/et_checkbox_content"
@@ -35,8 +38,10 @@
             android:layout_height="wrap_content"
             android:background="@null"
             android:hint="Nhập công việc..."
-            android:inputType="textMultiLine|textCapSentences"
-            android:maxLines="5"
+            android:textColorHint="@color/text_hint"
+            android:inputType="text|textCapSentences"
+            android:imeOptions="actionNext"
+            android:maxLines="1"
             android:textSize="16sp"
             android:textColor="@color/text_primary"
             android:layout_marginStart="12dp"

@@ -25,6 +25,10 @@ public class NoteAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
     private int currentFocusedPosition = -1;
 
+    public void setFocusPosition(int pos) {
+        this.currentFocusedPosition = pos;
+    }
+
     public interface OnNoteListener {
         void onNoteUpdated(Note note);
         void onNoteDeleted(int id);
@@ -161,6 +165,8 @@ public class NoteAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         LinearLayout root, actions;
         CheckBox cb;
         EditText et;
+        ImageView btnAdd, btnConvert, btnDelete;
+        TextView btnOk;
 
         CheckboxVH(View v) {
             super(v);
@@ -168,20 +174,52 @@ public class NoteAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             actions = v.findViewById(R.id.layout_actions);
             cb = v.findViewById(R.id.checkbox_note);
             et = v.findViewById(R.id.et_checkbox_content);
+            btnAdd = v.findViewById(R.id.btn_add_checkbox);
+            btnConvert = v.findViewById(R.id.btn_switch_note_type);
+            btnDelete = v.findViewById(R.id.btn_delete);
+            btnOk = v.findViewById(R.id.btn_ok);
 
+            // Enter key → add new checkbox in same group
             et.setOnEditorActionListener((v1, actionId, event) -> {
-                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT || 
-                    actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE ||
-                    (event != null && event.getKeyCode() == KeyEvent.KEYCODE_ENTER && event.getAction() == KeyEvent.ACTION_DOWN)) {
-                    
+                if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_NEXT ||
+                    actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+
                     int pos = getAdapterPosition();
                     if (pos != RecyclerView.NO_POSITION) {
+                        // Save current content first
+                        save(pos, et.getText().toString());
                         Note n = notes.get(pos);
                         listener.onNoteAddedAfter(pos, n.getGroupId());
                         return true;
                     }
                 }
                 return false;
+            });
+
+            // Focus change → save content & show/hide actions
+            et.setOnFocusChangeListener((v12, hasFocus) -> {
+                int pos = getAdapterPosition();
+                if (pos == RecyclerView.NO_POSITION) return;
+
+                if (hasFocus) {
+                    currentFocusedPosition = pos;
+                    actions.setVisibility(View.VISIBLE);
+                } else {
+                    actions.setVisibility(View.GONE);
+                    save(pos, et.getText().toString());
+                }
+            });
+
+            root.setOnClickListener(v1 -> focus());
+            btnOk.setOnClickListener(view -> clearFocus());
+            btnDelete.setOnClickListener(view -> deleteItem(getAdapterPosition()));
+            btnAdd.setOnClickListener(view -> {
+                int pos = getAdapterPosition();
+                if (pos != RecyclerView.NO_POSITION) {
+                    save(pos, et.getText().toString());
+                    Note n = notes.get(pos);
+                    listener.onNoteAddedAfter(pos, n.getGroupId());
+                }
             });
         }
 
@@ -208,14 +246,36 @@ public class NoteAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
 
             updateUI(n);
             applyLayout(root, n, position);
+
+            // Auto-focus newly created checkbox
+            if (position == currentFocusedPosition) {
+                focus();
+            } else {
+                actions.setVisibility(View.GONE);
+            }
+        }
+
+        void focus() {
+            et.requestFocus();
+            actions.setVisibility(View.VISIBLE);
+            et.post(() -> {
+                et.setSelection(et.getText().length());
+                showKeyboard(et);
+            });
+        }
+
+        void clearFocus() {
+            et.clearFocus();
+            currentFocusedPosition = -1;
+            hideKeyboard(itemView);
         }
 
         void updateUI(Note n) {
             if (n.isChecked()) {
-                et.setAlpha(0.6f);
+                root.setAlpha(0.45f);
                 et.setPaintFlags(et.getPaintFlags() | Paint.STRIKE_THRU_TEXT_FLAG);
             } else {
-                et.setAlpha(1f);
+                root.setAlpha(1f);
                 et.setPaintFlags(et.getPaintFlags() & ~Paint.STRIKE_THRU_TEXT_FLAG);
             }
         }
@@ -310,6 +370,7 @@ public class NoteAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public void addNoteToTop(Note note) {
         notes.add(0, note);
         updatePositions();
+        currentFocusedPosition = 0; // Auto-focus the new note
         notifyItemInserted(0);
         notifyItemRangeChanged(0, notes.size());
     }
@@ -369,7 +430,7 @@ public class NoteAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         n.setCheckbox(false);
         n.setGroup(true);
         n.setGroupId(generateGroupId());
-        n.setContent("Danh sách công việc");
+        n.setContent(""); // Empty content — placeholder hint will show
 
         String[] lines = text.split("\n");
         List<Note> children = new ArrayList<>();
@@ -385,19 +446,23 @@ public class NoteAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             }
         }
         
-        if (children.isEmpty()) {
-            Note child = new Note("");
-            child.setCheckbox(true);
-            child.setGroup(false);
-            child.setGroupId(n.getGroupId());
-            children.add(child);
-        }
+        // Always add an extra empty checkbox at the end for immediate input
+        Note emptyChild = new Note("");
+        emptyChild.setCheckbox(true);
+        emptyChild.setGroup(false);
+        emptyChild.setGroupId(n.getGroupId());
+        children.add(emptyChild);
 
         notes.addAll(pos + 1, children);
         updatePositions();
+
+        // Auto-focus the last (empty) checkbox
+        currentFocusedPosition = pos + children.size();
+
         notifyItemChanged(pos);
         notifyItemRangeInserted(pos + 1, children.size());
         listener.onRequestSyncDatabase();
+        listener.onScrollToPosition(pos + children.size());
     }
 
     private void revertToNote(int headerPos) {
