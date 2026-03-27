@@ -1,7 +1,6 @@
 package com.example.btl_quanlithuchi;
 
 import android.app.AlertDialog;
-import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -9,7 +8,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
-import android.widget.ImageView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -31,9 +29,7 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
     private NoteAdapter noteAdapter;
     private FloatingActionButton fabAdd;
     private Button btnDeleteAll;
-    private ImageView btnVoiceInput;
     private DBHelper dbHelper;
-    private VoiceInputHelper voiceInputHelper;
 
     @Nullable
     @Override
@@ -44,44 +40,14 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
         recyclerView = view.findViewById(R.id.recyclerView_notes);
         fabAdd = view.findViewById(R.id.fab_add_note);
         btnDeleteAll = view.findViewById(R.id.btn_delete_all_notes);
-        btnVoiceInput = view.findViewById(R.id.btn_voice_input_note);
 
         dbHelper = new DBHelper(getContext());
-        voiceInputHelper = new VoiceInputHelper(getContext(), this);
-        
-        // Hide voice input if not available
-        if (!voiceInputHelper.isSpeechAvailable()) {
-            btnVoiceInput.setVisibility(View.GONE);
-        }
-
-        voiceInputHelper.setListener(new VoiceInputHelper.VoiceListener() {
-            @Override
-            public void onVoiceResult(String text) {
-                addNewNoteWithContent(text);
-            }
-
-            @Override
-            public void onVoiceError(String message) {
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onListeningStarted() {
-                Toast.makeText(getContext(), "Đang nghe...", Toast.LENGTH_SHORT).show();
-            }
-
-            @Override
-            public void onListeningStopped() {
-                // Done listening
-            }
-        });
 
         setupRecyclerView();
         loadNotes();
 
         fabAdd.setOnClickListener(v -> addNewNote());
         btnDeleteAll.setOnClickListener(v -> showDeleteAllConfirmation());
-        btnVoiceInput.setOnClickListener(v -> voiceInputHelper.startListening());
 
         return view;
     }
@@ -108,19 +74,6 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
         }).start();
     }
 
-    private void addNewNoteWithContent(String content) {
-        Note newNote = new Note(content);
-        newNote.setPosition(0);
-
-        long id = dbHelper.addNote(newNote);
-        if (id != -1) {
-            newNote.setId((int) id);
-            noteAdapter.addNoteToTop(newNote);
-            recyclerView.scrollToPosition(0);
-            syncPositions();
-        }
-    }
-
     private void syncPositions() {
         new Thread(() -> {
             List<Note> allNotes = noteAdapter.getNotesListInternal();
@@ -128,18 +81,6 @@ public class Trangnote_Fragment extends Fragment implements NoteAdapter.OnNoteLi
                 dbHelper.updateNotePosition(n.getId(), n.getPosition());
             }
         }).start();
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        voiceInputHelper.handleActivityResult(requestCode, resultCode, data);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        voiceInputHelper.handlePermissionResult(requestCode, permissions, grantResults);
     }
 
     private void setupRecyclerView() {

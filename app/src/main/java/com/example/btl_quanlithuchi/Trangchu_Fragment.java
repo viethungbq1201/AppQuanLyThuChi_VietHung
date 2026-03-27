@@ -1,27 +1,15 @@
 package com.example.btl_quanlithuchi;
 
-import android.Manifest;
 import android.app.AlertDialog;
-import android.app.Dialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Color;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
-import android.os.Handler;
-import android.speech.RecognizerIntent;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.style.ForegroundColorSpan;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -36,15 +24,12 @@ import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Trangchu_Fragment extends Fragment {
 
@@ -55,11 +40,6 @@ public class Trangchu_Fragment extends Fragment {
     private PieChart pieChart;
     private TextView txtBalance;
     private String currentMonthYear;
-
-    private FloatingActionButton fabVoiceInput;
-    private VoiceInputHelper voiceHelper;
-    private Dialog voiceDialog;
-    private String lastRecognizedText = "";
 
     @Nullable
     @Override
@@ -76,274 +56,11 @@ public class Trangchu_Fragment extends Fragment {
         rc_view_1 = view.findViewById(R.id.rc_view_1);
         rc_view_1.setLayoutManager(new LinearLayoutManager(getContext()));
 
-        fabVoiceInput = view.findViewById(R.id.fab_voice_input);
-
         setupMonthSpinner();
         loadAllData();
         updateTotalBalance();
 
-        voiceHelper = new VoiceInputHelper(getContext(), this);
-        voiceHelper.setListener(new VoiceInputHelper.VoiceListener() {
-            @Override
-            public void onVoiceResult(String text) {
-                lastRecognizedText = text;
-                updateVoiceDialogResult(text);
-            }
-
-            @Override
-            public void onVoiceError(String message) {
-                Toast.makeText(getContext(), message, Toast.LENGTH_SHORT).show();
-                updateVoiceDialogStatus("Lỗi: " + message, false);
-            }
-
-            @Override
-            public void onListeningStarted() {
-                updateVoiceDialogStatus("Đang nghe... nói ngay", true);
-            }
-
-            @Override
-            public void onListeningStopped() {
-            }
-        });
-
-        fabVoiceInput.setOnClickListener(v -> showVoiceDialog());
-
         return view;
-    }
-
-    private void showVoiceDialog() {
-        voiceDialog = new Dialog(getContext());
-        voiceDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        voiceDialog.setContentView(R.layout.dialog_voice);
-        voiceDialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
-        voiceDialog.setCancelable(false);
-
-        ImageButton btnCancel = voiceDialog.findViewById(R.id.btn_cancel);
-        ImageView ivMic = voiceDialog.findViewById(R.id.iv_mic);
-        ImageView ivWave = voiceDialog.findViewById(R.id.iv_wave);
-        TextView tvStatus = voiceDialog.findViewById(R.id.tv_status);
-        TextView tvResult = voiceDialog.findViewById(R.id.tv_result);
-        Button btnStart = voiceDialog.findViewById(R.id.btn_start);
-        Button btnOk = voiceDialog.findViewById(R.id.btn_ok);
-        Button btnReplay = voiceDialog.findViewById(R.id.btn_replay);
-
-        // Áp dụng theme
-        int cardBg = ContextCompat.getColor(getContext(), R.color.dialog_background);
-        int textPrimary = ContextCompat.getColor(getContext(), R.color.text_primary);
-        int primaryColor = ContextCompat.getColor(getContext(), R.color.color_primary);
-        int resultBg = ContextCompat.getColor(getContext(), R.color.result_background);
-
-        voiceDialog.findViewById(R.id.card_view).setBackgroundColor(cardBg);
-        tvStatus.setTextColor(textPrimary);
-        tvResult.setTextColor(textPrimary);
-        tvResult.setBackgroundColor(resultBg);
-        ivMic.setColorFilter(primaryColor);
-        ivWave.setColorFilter(primaryColor);
-
-        // Reset state
-        lastRecognizedText = "";
-        tvResult.setText("");
-        ivWave.setVisibility(View.GONE);
-        btnOk.setVisibility(View.GONE);
-        btnReplay.setVisibility(View.GONE);
-        btnStart.setVisibility(View.VISIBLE);
-        btnStart.setText("BẮT ĐẦU NÓI");
-        tvStatus.setText("Nhấn nút để bắt đầu nói");
-
-        btnCancel.setOnClickListener(v -> voiceDialog.dismiss());
-        btnStart.setOnClickListener(v -> voiceHelper.startListening());
-        btnOk.setOnClickListener(v -> {
-            processVoiceCommand(lastRecognizedText);
-            voiceDialog.dismiss();
-        });
-        btnReplay.setOnClickListener(v -> voiceHelper.startListening());
-
-        voiceDialog.show();
-    }
-
-    private void updateVoiceDialogStatus(String status, boolean isListening) {
-        if (voiceDialog != null && voiceDialog.isShowing()) {
-            TextView tvStatus = voiceDialog.findViewById(R.id.tv_status);
-            ImageView ivWave = voiceDialog.findViewById(R.id.iv_wave);
-            Button btnStart = voiceDialog.findViewById(R.id.btn_start);
-
-            int listeningColor = ContextCompat.getColor(getContext(), R.color.listening_color);
-            int normalColor = ContextCompat.getColor(getContext(), R.color.text_primary);
-
-            tvStatus.setText(status);
-            tvStatus.setTextColor(isListening ? listeningColor : normalColor);
-            ivWave.setVisibility(isListening ? View.VISIBLE : View.GONE);
-            btnStart.setVisibility(isListening ? View.GONE : View.VISIBLE);
-
-            if (isListening) {
-                ivWave.animate()
-                        .scaleX(1.2f).scaleY(1.2f).setDuration(500)
-                        .withEndAction(() -> ivWave.animate()
-                                .scaleX(1.0f).scaleY(1.0f).setDuration(500).start())
-                        .start();
-            }
-        }
-    }
-
-    private void updateVoiceDialogResult(String text) {
-        if (voiceDialog != null && voiceDialog.isShowing()) {
-            TextView tvResult = voiceDialog.findViewById(R.id.tv_result);
-            Button btnOk = voiceDialog.findViewById(R.id.btn_ok);
-            Button btnReplay = voiceDialog.findViewById(R.id.btn_replay);
-            Button btnStart = voiceDialog.findViewById(R.id.btn_start);
-
-            tvResult.setText(text);
-            btnOk.setVisibility(View.VISIBLE);
-            btnReplay.setVisibility(View.VISIBLE);
-            btnStart.setVisibility(View.GONE);
-            updateVoiceDialogStatus("Đã nhận diện xong!", false);
-            highlightKeywords(text, tvResult);
-        }
-    }
-
-    private void highlightKeywords(String text, TextView textView) {
-        SpannableString spannable = new SpannableString(text);
-        String lowerText = text.toLowerCase();
-
-        int amountColor = ContextCompat.getColor(getContext(), R.color.amount_highlight);
-        int incomeColor = ContextCompat.getColor(getContext(), R.color.income_highlight);
-        int expenseColor = ContextCompat.getColor(getContext(), R.color.expense_highlight);
-
-        Pattern pattern = Pattern.compile("(\\d+)\\s*(k|tr|nghìn|triệu|ngàn)");
-        Matcher matcher = pattern.matcher(lowerText);
-        while (matcher.find()) {
-            spannable.setSpan(new ForegroundColorSpan(amountColor),
-                    matcher.start(), matcher.end(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-
-        if (lowerText.contains("thu") || lowerText.contains("nhận") ||
-                lowerText.contains("lương") || lowerText.contains("tiếp")) {
-            int start = findFirstOccurrence(lowerText, "thu", "nhận", "lương", "tiếp");
-            if (start != -1)
-                spannable.setSpan(new ForegroundColorSpan(incomeColor),
-                        start, start + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-
-        if (lowerText.contains("chi") || lowerText.contains("mua") ||
-                lowerText.contains("trả") || lowerText.contains("tiêu")) {
-            int start = findFirstOccurrence(lowerText, "chi", "mua", "trả", "tiêu");
-            if (start != -1)
-                spannable.setSpan(new ForegroundColorSpan(expenseColor),
-                        start, start + 3, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        }
-
-        textView.setText(spannable);
-    }
-
-    private int findFirstOccurrence(String text, String... keywords) {
-        for (String keyword : keywords) {
-            int index = text.indexOf(keyword);
-            if (index != -1)
-                return index;
-        }
-        return -1;
-    }
-
-    private void processVoiceCommand(String voiceText) {
-        String type = "chi";
-        int amount = 0;
-        String category = "Khác";
-        String lowerText = voiceText.toLowerCase();
-
-        if (lowerText.contains("thu") || lowerText.contains("nhận") ||
-                lowerText.contains("lương") || lowerText.contains("tiếp")) {
-            type = "thu";
-        }
-
-        Pattern pattern = Pattern.compile("(\\d+)\\s*(k|tr|nghìn|triệu|ngàn)");
-        Matcher matcher = pattern.matcher(lowerText);
-        if (matcher.find()) {
-            try {
-                int num = Integer.parseInt(matcher.group(1));
-                String unit = matcher.group(2);
-                amount = unit.contains("tr") || unit.contains("triệu") ? num * 1000000 : num * 1000;
-            } catch (Exception e) {
-                amount = 0;
-            }
-        }
-
-        if (lowerText.contains("ăn") || lowerText.contains("cơm") || lowerText.contains("bún")) {
-            category = "Ăn uống";
-        } else if (lowerText.contains("xăng") || lowerText.contains("xe")) {
-            category = "Xăng xe";
-        } else if (lowerText.contains("điện thoại") || lowerText.contains("nạp")) {
-            category = "Điện thoại";
-        } else if (lowerText.contains("lương")) {
-            category = "Lương";
-        } else if (lowerText.contains("mua sắm") || lowerText.contains("siêu thị")) {
-            category = "Mua sắm";
-        } else if (lowerText.contains("nhà") || lowerText.contains("trọ")) {
-            category = "Tiền nhà";
-        }
-
-        showConfirmationDialog(type, amount, category, voiceText);
-    }
-
-    private void showConfirmationDialog(String type, int amount, String category, String description) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-        builder.setTitle("Xác nhận thêm giao dịch");
-
-        String message = String.format(
-                "Loại: %s\nDanh mục: %s\nSố tiền: %s đ\nMô tả: %s\n\nBạn có chắc muốn thêm?",
-                type.equals("thu") ? "THU NHẬP" : "CHI TIÊU",
-                category,
-                new DecimalFormat("#,###").format(amount),
-                description);
-
-        builder.setMessage(message)
-                .setPositiveButton("THÊM NGAY", (dialog, which) -> saveTransaction(type, amount, category, description))
-                .setNegativeButton("CHỈNH SỬA", (dialog, which) -> showEditDialog(type, amount, category, description))
-                .setNeutralButton("HỦY", null)
-                .show();
-    }
-
-    private void saveTransaction(String type, int amount, String category, String description) {
-        if (amount == 0) {
-            Toast.makeText(getContext(), "Không thể xác định số tiền", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        Infomation info = new Infomation();
-        info.setTitle(description);
-        info.setCategory(category);
-        info.setPrice(amount);
-        info.setType(type);
-        info.setDate(new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.getDefault()).format(new Date()));
-        info.setTimestamp(System.currentTimeMillis());
-
-        dbHelper.insertInfomation(info);
-
-        String selected = (String) spinnerMonth.getSelectedItem();
-        if (selected != null) {
-            if (selected.equals("Tất cả")) {
-                loadAllData();
-                loadPieChartAll();
-            } else {
-                loadDataForMonth(selected);
-            }
-        }
-
-        int successColor = ContextCompat.getColor(getContext(), R.color.success_color);
-        fabVoiceInput.setBackgroundTintList(android.content.res.ColorStateList.valueOf(successColor));
-
-        new Handler().postDelayed(() -> {
-            int primaryColor = ContextCompat.getColor(getContext(), R.color.color_primary);
-            fabVoiceInput.setBackgroundTintList(android.content.res.ColorStateList.valueOf(primaryColor));
-        }, 1000);
-
-        Toast.makeText(getContext(), String.format("Đã thêm %s %s đ",
-                type.equals("thu") ? "thu" : "chi", new DecimalFormat("#,###").format(amount)), Toast.LENGTH_SHORT)
-                .show();
-    }
-
-    private void showEditDialog(String type, int amount, String category, String description) {
-        // Implement your edit dialog here
-        Toast.makeText(getContext(), "Mở chỉnh sửa", Toast.LENGTH_SHORT).show();
     }
 
     private void setupMonthSpinner() {
@@ -580,20 +297,5 @@ public class Trangchu_Fragment extends Fragment {
                 }
             }
         }
-    }
-
-    @Override
-    public void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (voiceHelper != null)
-            voiceHelper.handleActivityResult(requestCode, resultCode, data);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,
-            @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (voiceHelper != null)
-            voiceHelper.handlePermissionResult(requestCode, permissions, grantResults);
     }
 }
