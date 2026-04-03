@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors -->
-    <color name="color_primary">#90CAF9</color>
-    <color name="color_primary_dark">#1E1E1E</color> <!-- Đổi thành màu nền tối -->
-    <color name="color_primary_light">#2D2D2D</color>
+    <!-- Primary Colors: Muted Indigo -->
+    <color name="color_primary">#C5CAE9</color>
+    <color name="color_primary_dark">#0F1115</color>
+    <color name="color_primary_light">#1A1C30</color>
 
-    <!-- Background Colors -->
-    <color name="background_light">#000000</color>
-    <color name="background_grey">#000000</color>
-    <color name="background_card">#CC1C1C1E</color> <!-- Glassmorphism: 80% alpha -->
+    <!-- Background Colors: Deep Slate -->
+    <color name="background_light">#0F1115</color>
+    <color name="background_grey">#0F1115</color>
+    <color name="background_card">#1B1E23</color>
 
-    <!-- Text Colors -->
-    <color name="text_primary">#FFFFFF</color> <!-- Đổi thành trắng cho dễ nhìn -->
-    <color name="text_secondary">#B0B0B0</color>
-    <color name="text_hint">#666666</color>
+    <!-- Text Colors: High Contrast White/Grey -->
+    <color name="text_primary">#E1E2E6</color>
+    <color name="text_secondary">#909094</color>
+    <color name="text_hint">#45474D</color>
     <color name="text_white">#FFFFFF</color>
 
-    <!-- Status Colors -->
-    <color name="color_income">#66BB6A</color>
-    <color name="color_expense">#EF5350</color>
-    <color name="color_warning">#FFB74D</color>
+    <!-- Status Colors: Muted Success/Error -->
+    <color name="color_income">#81C995</color>
+    <color name="color_expense">#F28B82</color>
+    <color name="color_warning">#FBC02D</color>
 
     <!-- Border & Divider -->
     <color name="border_light">#424242</color>

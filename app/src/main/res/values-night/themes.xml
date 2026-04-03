@@ -2,12 +2,13 @@
 <resources>
     <style name="Base.Theme.BTL_QuanLiThuChi" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/color_primary</item>
-        <item name="colorPrimaryDark">@color/background_light</item>
+        <item name="colorPrimaryDark">@color/color_primary_dark</item>
         <item name="colorAccent">@color/color_primary</item>
-        <item name="android:windowBackground">@color/background_grey</item>
+        <item name="android:windowBackground">@color/background_light</item>
         <item name="android:textColorPrimary">@color/text_primary</item>
         <item name="android:textColorSecondary">@color/text_secondary</item>
-        <item name="android:statusBarColor">@color/background_light</item>
+        <item name="android:statusBarColor">@color/color_primary_dark</item>
+        <item name="android:navigationBarColor">@color/background_light</item>
 
         <item name="actionBarStyle">@style/MyActionBarDark</item>
 
