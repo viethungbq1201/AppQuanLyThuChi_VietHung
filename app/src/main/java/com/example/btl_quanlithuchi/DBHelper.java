@@ -277,18 +277,19 @@ public class DBHelper extends SQLiteOpenHelper {
         String lower = category.toLowerCase().trim();
 
         // THU NHẬP
-        if (lower.equals("lương")) return 5000000;
+        if (lower.equals("lương")) return 3000000;
         if (lower.equals("bố mẹ")) return 2000000;
         if (lower.contains("tip") || lower.contains("tiếp")) return 50000;
 
         // CHI TIÊU
-        if (lower.contains("gửi xe 1") || lower.contains("gửi xe 2") || lower.contains("gửi xe 3")) return 5000;
+        if (lower.equals("gửi xe 1") || lower.contains("gửi xe 3k")) return 3000;
+        if (lower.equals("gửi xe 2") || lower.contains("gửi xe 5k")) return 5000;
+        if (lower.equals("gửi xe 3") || lower.contains("gửi xe 10k")) return 10000;
         if (lower.contains("gửi xe")) return 3000;
         if (lower.equals("xăng")) return 50000;
         if (lower.contains("nạp điện thoại") || lower.contains("điện thoại")) return 50000;
         if (lower.contains("ăn sáng")) return 30000;
         if (lower.contains("ăn trưa") || lower.contains("ăn tối")) return 50000;
-        if (lower.contains("xe thái bình")) return 100000;
         if (lower.contains("grab") || lower.contains("bee") || lower.contains("be")) return 30000;
 
         return 0;

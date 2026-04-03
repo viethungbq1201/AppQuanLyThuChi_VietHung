@@ -19,6 +19,7 @@ import android.widget.*;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -97,12 +98,18 @@ public class Trangchi_Fragment extends Fragment {
     private void loadDataForMonth(String month) {
         List<Infomation> list = dbHelper.getInfomationsByMonth("chi", month);
         adapter = new InfomationAdapter(getContext(), list);
+        adapter.setOnDataChangeListener(() -> {
+            // Cập nhật lại tổng tiền khi có thay đổi từ adapter (sửa/xóa)
+            int newTotal = dbHelper.getTotalExpenseByMonth(month);
+            tvTotal.setText("Tổng chi tháng " + month + ": " +
+                    new DecimalFormat("#,###").format(newTotal) + " đ");
+        });
         recyclerView.setAdapter(adapter);
 
         int total = dbHelper.getTotalExpenseByMonth(month);
         tvTotal.setText("Tổng chi tháng " + month + ": " +
                 new DecimalFormat("#,###").format(total) + " đ");
-        tvTotal.setTextColor(Color.parseColor("#F44336"));
+        tvTotal.setTextColor(ContextCompat.getColor(getContext(), R.color.color_expense));
     }
 
     // =========================
@@ -129,7 +136,7 @@ public class Trangchi_Fragment extends Fragment {
         Spinner spinner = view.findViewById(R.id.spinner);
 
         // Spinner Setup
-        String[] options = {"Nhập loại tiền chi", "Gửi xe 1", "Gửi xe 2", "Gửi xe 3", "Xăng", "Nạp điện thoại", "Xe Thái Bình", "Khác"};
+        String[] options = {"Nhập loại tiền chi", "Gửi xe 3k", "Gửi xe 5k", "Gửi xe 10k", "Xăng", "Nạp điện thoại", "Khác"};
         ArrayAdapter<String> spinnerAdapter = new ArrayAdapter<>(getContext(),
                 android.R.layout.simple_spinner_item, options);
         spinnerAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);

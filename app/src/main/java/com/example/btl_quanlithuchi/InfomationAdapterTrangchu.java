@@ -52,7 +52,7 @@ public class InfomationAdapterTrangchu extends RecyclerView.Adapter<InfomationAd
             return R.drawable.ic_vehicle;
         }
 
-        if (lowerTitle.contains("xe thái bình") || lowerTitle.contains("bee") || lowerTitle.contains("grab")) {
+        if (lowerTitle.contains("bee") || lowerTitle.contains("grab")) {
             return R.drawable.ic_transport;
         }
 

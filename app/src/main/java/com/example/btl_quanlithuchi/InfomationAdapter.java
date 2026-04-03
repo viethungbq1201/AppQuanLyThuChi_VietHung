@@ -33,6 +33,15 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
     private List<Infomation> list;
     private final Context context;
     private final DBHelper dbHelper;
+    private OnDataChangeListener listener;
+
+    public interface OnDataChangeListener {
+        void onDataChanged();
+    }
+
+    public void setOnDataChangeListener(OnDataChangeListener listener) {
+        this.listener = listener;
+    }
 
     public InfomationAdapter(Context context, List<Infomation> list) {
         this.context = context;
@@ -70,7 +79,7 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
             return R.drawable.ic_vehicle;
         }
 
-        if (lowerTitle.contains("xe thái bình") || lowerTitle.contains("bee") ||
+        if (lowerTitle.contains("bee") ||
                 lowerTitle.contains("grab") || lowerTitle.contains("be")) {
             return R.drawable.ic_transport;
         }
@@ -183,7 +192,7 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
         // Khởi tạo spinner
         String[] options = info.getType().equalsIgnoreCase("thu") ?
                 new String[]{"Nhập loại tiền thu chi", "Lương", "Bố mẹ", "C Trang"} :
-                new String[]{"Nhập loại tiền thu chi", "Gửi xe 1", "Gửi xe 2", "Gửi xe 3", "Xăng", "Nạp điện thoại", "Xe Thái Bình"};
+                new String[]{"Nhập loại tiền thu chi", "Gửi xe 3k", "Gửi xe 5k", "Gửi xe 10k", "Xăng", "Nạp điện thoại"};
 
         ArrayAdapter<String> adapter = new ArrayAdapter<>(context, android.R.layout.simple_spinner_item, options);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
@@ -306,6 +315,10 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
                 dbHelper.updateInfomation(info);
                 notifyItemChanged(position);
 
+                if (listener != null) {
+                    listener.onDataChanged();
+                }
+
                 Toast.makeText(context, "Đã cập nhật thành công: " + newCategory + " - " + newPrice + " đ", Toast.LENGTH_SHORT).show();
                 dialog.dismiss();
             }
@@ -351,6 +364,9 @@ public class InfomationAdapter extends RecyclerView.Adapter<InfomationAdapter.Vi
                         list.remove(position);
                         notifyItemRemoved(position);
                         notifyItemRangeChanged(position, list.size());
+                        if (listener != null) {
+                            listener.onDataChanged();
+                        }
                         Toast.makeText(context, "Đã xóa!", Toast.LENGTH_SHORT).show();
                     }
                 })

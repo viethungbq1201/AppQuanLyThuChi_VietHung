@@ -18,6 +18,7 @@ import android.view.ViewGroup;
 import android.widget.*;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -82,12 +83,18 @@ public class Trangthu_Fragment extends Fragment {
     private void loadDataForMonth(String month) {
         List<Infomation> list = dbHelper.getInfomationsByMonth("thu", month);
         adapter = new InfomationAdapter(getContext(), list);
+        adapter.setOnDataChangeListener(() -> {
+            // Cập nhật lại tổng tiền khi có thay đổi từ adapter (sửa/xóa)
+            int newTotal = dbHelper.getTotalIncomeByMonth(month);
+            tvTotal.setText("Tổng thu tháng " + month + ": " +
+                    new DecimalFormat("#,###").format(newTotal) + " đ");
+        });
         recyclerView.setAdapter(adapter);
 
         int total = dbHelper.getTotalIncomeByMonth(month);
         tvTotal.setText("Tổng thu tháng " + month + ": " +
                 new DecimalFormat("#,###").format(total) + " đ");
-        tvTotal.setTextColor(Color.parseColor("#4CAF50"));
+        tvTotal.setTextColor(ContextCompat.getColor(getContext(), R.color.color_income));
     }
 
     private void showAddEntryDialog() {
