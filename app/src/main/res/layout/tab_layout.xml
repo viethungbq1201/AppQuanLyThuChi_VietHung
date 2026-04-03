@@ -12,6 +12,7 @@
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
         android:background="@color/color_primary"
+        android:elevation="0dp"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar"
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light">
 
@@ -32,9 +33,9 @@
                 android:layout_height="wrap_content"
                 android:text="My Wallet"
                 android:textColor="@android:color/white"
-                android:textSize="18sp"
+                android:textSize="20sp"
                 android:textStyle="bold"
-                android:layout_marginStart="8dp" />
+                android:layout_marginStart="12dp" />
 
         </LinearLayout>
 
@@ -46,16 +47,16 @@
         android:layout_height="wrap_content"
         app:tabMode="fixed"
         app:tabGravity="fill"
-        app:tabIndicatorColor="@color/tab_indicator"
+        app:tabIndicatorColor="@android:color/white"
         app:tabSelectedTextColor="@color/tab_selected_text"
         app:tabTextColor="@color/tab_unselected_text"
-        app:tabBackground="@color/tab_background"
+        app:tabBackground="@color/color_primary"
         app:tabTextAppearance="@style/MyTabTextAppearance"
         app:tabSelectedTextAppearance="@style/MyTabSelectedTextAppearance"
         app:tabIndicatorHeight="3dp"
         app:tabIndicatorFullWidth="false"
         android:minHeight="48dp"
-        android:elevation="4dp"/>
+        android:elevation="0dp"/>
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/view_pager"

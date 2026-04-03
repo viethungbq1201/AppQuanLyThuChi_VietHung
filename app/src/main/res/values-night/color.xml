@@ -1,63 +1,60 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Primary Colors: Muted Indigo -->
-    <color name="color_primary">#C5CAE9</color>
-    <color name="color_primary_dark">#0F1115</color>
-    <color name="color_primary_light">#1A1C30</color>
+    <!-- Primary Colors: Vibrant Indigo on Slate -->
+    <color name="color_primary">#A5B4FC</color>
+    <color name="color_primary_dark">#0F172A</color>
+    <color name="color_primary_light">#1E1B4B</color>
 
-    <!-- Background Colors: Deep Slate -->
-    <color name="background_light">#0F1115</color>
-    <color name="background_grey">#0F1115</color>
-    <color name="background_card">#1B1E23</color>
+    <!-- Background Colors: Deep Slate Blue -->
+    <color name="background_light">#0F172A</color>
+    <color name="background_grey">#0F172A</color>
+    <color name="background_card">#1E293B</color>
+    <color name="surface_variant">#334155</color>
 
-    <!-- Text Colors: High Contrast White/Grey -->
-    <color name="text_primary">#E1E2E6</color>
-    <color name="text_secondary">#909094</color>
-    <color name="text_hint">#45474D</color>
+    <!-- Text Colors -->
+    <color name="text_primary">#E5E7EB</color>
+    <color name="text_secondary">#94A3B8</color>
+    <color name="text_hint">#64748B</color>
     <color name="text_white">#FFFFFF</color>
 
-    <!-- Status Colors: Muted Success/Error -->
-    <color name="color_income">#81C995</color>
-    <color name="color_expense">#F28B82</color>
-    <color name="color_warning">#FBC02D</color>
+    <!-- Status Colors -->
+    <color name="color_income">#4ADE80</color>
+    <color name="color_expense">#F87171</color>
+    <color name="color_warning">#FBBF24</color>
 
     <!-- Border & Divider -->
-    <color name="border_light">#424242</color>
-    <color name="divider">#333333</color>
+    <color name="border_light">#475569</color>
+    <color name="divider">#334155</color>
 
-    <!-- Tab & Navigation - CẢI THIỆN ĐỘ TƯƠNG PHẢN -->
-    <color name="tab_indicator">#90CAF9</color>
-    <color name="tab_selected_text">#90CAF9</color>
-    <color name="tab_unselected_text">#CCCCCC</color> <!-- Sáng hơn -->
-    <color name="tab_background">#1E1E1E</color> <!-- Màu nền tab -->
+    <!-- Tab & Navigation -->
+    <color name="tab_indicator">#A5B4FC</color>
+    <color name="tab_selected_text">#FFFFFF</color>
+    <color name="tab_unselected_text">#94A3B8</color>
+    <color name="tab_background">#1E293B</color>
 
     <!-- Button Colors -->
-    <color name="button_primary">#90CAF9</color>
-    <color name="button_secondary">#666666</color>
+    <color name="button_primary">#6366F1</color>
+    <color name="button_secondary">#64748B</color>
     <color name="button_text">#FFFFFF</color>
 
     <!-- Dialog Colors -->
-    <color name="dialog_background">#2D2D2D</color>
-    <color name="dialog_title">#90CAF9</color>
+    <color name="dialog_background">#1E293B</color>
+    <color name="dialog_title">#A5B4FC</color>
 
     <!-- Chart Colors -->
-    <color name="chart_income">#66BB6A</color>
-    <color name="chart_expense">#EF5350</color>
-    <color name="chart_text">#FFFFFF</color>
-    <color name="chart_hole">#FFFFFF</color> <!-- Màu trắng cho lỗ tròn biểu đồ -->
-    <color name="chart_transparent_circle">#404040</color> <!-- Vòng trong mờ -->
+    <color name="chart_income">#4ADE80</color>
+    <color name="chart_expense">#F87171</color>
+    <color name="chart_text">#E5E7EB</color>
+    <color name="chart_hole">#1E293B</color>
+    <color name="chart_transparent_circle">#334155</color>
 
-    <color name="color_secondary">#64B5F6</color>
-
-    <!-- Màu thu/chi -->
-    <color name="result_background">#2D2D2D</color>
-    <color name="listening_color">#FF8A80</color>
-    <color name="success_color">#69F0AE</color>
-
-    <!-- Màu highlight -->
-    <color name="amount_highlight">#FFB74D</color>
-    <color name="income_highlight">#81C784</color>
-    <color name="expense_highlight">#E57373</color>
-
+    <!-- Secondary & Misc -->
+    <color name="color_secondary">#818CF8</color>
+    <color name="result_background">#334155</color>
+    <color name="listening_color">#F87171</color>
+    <color name="success_color">#4ADE80</color>
+    <color name="amount_highlight">#FBBF24</color>
+    <color name="income_highlight">#4ADE80</color>
+    <color name="expense_highlight">#F87171</color>
 
 </resources>
